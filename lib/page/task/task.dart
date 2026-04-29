@@ -2,19 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:todolist/page/task/task_controller.dart';
 import 'package:todolist/model/task/task.dart';
+import 'package:todolist/constants/theme.dart';
 
-// 主题颜色配置 - 预留设置主题颜色功能
-class TaskTheme {
-  // 主色调 - 清新浅蓝色
-  static const Color primaryColor = Color(0xFFE3F2FD);
-  static const Color appBarColor = Color(0xFF90CAF9);
-  static const Color cardColor = Colors.white;
-}
 
 class TaskPage extends StatelessWidget {
   TaskPage({Key? key}) : super(key: key);
 
-  final TaskController controller = Get.put(TaskController());
+  final TaskController controller = Get.find<TaskController>();
   // 创建任务详情弹窗
   void _showTaskDetailDialog(TaskModel task) {
     Get.dialog(

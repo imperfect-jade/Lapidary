@@ -4,6 +4,7 @@ import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
 import 'package:todolist/model/task/task.dart';
+import 'package:todolist/page/calendar/calendar_controller.dart';
 import 'package:todolist/page/pomodoro/pomodoro_controller.dart';
 import 'package:todolist/page/task/task_controller.dart';
 import 'package:todolist/routes/index.dart';
@@ -22,6 +23,7 @@ void main(List<String> args) async
   // 注册Controller
   Get.put(TaskController());
   Get.put(PomodoroController());
+  Get.put(CalendarController());
   
   //运行应用
    runApp(getRouteWidget());

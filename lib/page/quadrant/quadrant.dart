@@ -1,7 +1,7 @@
-// lib/page/quadrant_page.dart
-
+// 四象限页面
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:todolist/constants/task_priority.dart';
 import 'package:todolist/constants/theme.dart';
 import 'package:todolist/model/task/task.dart';
 import 'package:todolist/page/task/task_controller.dart';
@@ -9,42 +9,8 @@ import 'package:todolist/page/task/task_controller.dart';
 class QuadrantPage extends StatelessWidget {
   const QuadrantPage({super.key});
 
-  // 象限配置
-  static const _quadrants = [
-    _QuadrantConfig(
-      title: '重要且紧急',
-      subtitle: '立刻做',
-      priority: 1,
-      color: Colors.red,
-      icon: Icons.priority_high,
-    ),
-    _QuadrantConfig(
-      title: '重要不紧急',
-      subtitle: '计划做',
-      priority: 2,
-      color: Colors.orange,
-      icon: Icons.event_note,
-    ),
-    _QuadrantConfig(
-      title: '紧急不重要',
-      subtitle: '快速做',
-      priority: 3,
-      color: Colors.blue,
-      icon: Icons.speed,
-    ),
-    _QuadrantConfig(
-      title: '不重要不紧急',
-      subtitle: '尽量少做',
-      priority: 4,
-      color: Colors.grey,
-      icon: Icons.low_priority,
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<TaskController>();
-
     return Scaffold(
       backgroundColor: TaskTheme.primaryColor,
       appBar: AppBar(
@@ -54,100 +20,105 @@ class QuadrantPage extends StatelessWidget {
         title: const Text('四象限'),
       ),
 
-      body: Obx(() {
-        final pendingTasks = controller.pendingTasks;
-
-        return Column(
-          children: [
-            // 顶部提示
-            _buildSummary(pendingTasks),
-            const SizedBox(height: 8),
-            // 四象限网格
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _buildQuadrant(
-                              _quadrants[0], pendingTasks, controller
+      body: GetBuilder<TaskController>(
+        id: 'quadrant',
+        builder: (controller) {
+          return Column(
+            children: [
+              // 顶部提示
+              _buildSummary(controller),
+              const SizedBox(height: 8),
+              // 四象限网格
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _buildQuadrant(
+                                taskPriorityOptions[0],
+                                controller,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildQuadrant(
-                              _quadrants[1], pendingTasks, controller
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildQuadrant(
+                                taskPriorityOptions[1],
+                                controller,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _buildQuadrant(
-                              _quadrants[2], pendingTasks, controller
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _buildQuadrant(
+                                taskPriorityOptions[2],
+                                controller,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildQuadrant(
-                              _quadrants[3], pendingTasks, controller
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildQuadrant(
+                                taskPriorityOptions[3],
+                                controller,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
+                      const SizedBox(height: 8),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        );
-      }),
+            ],
+          );
+        },
+      ),
     );
   }
 
   // 顶部统计
-  Widget _buildSummary(List<TaskModel> pendingTasks) {
+  Widget _buildSummary(TaskController controller) {
     return Container(
       padding: const EdgeInsets.all(12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: _quadrants.map((q) {
-          final count = pendingTasks
-            .where((t) => t.priority == q.priority).length;
-          return _miniStat(q.color, '${q.title}', '$count');
+        children: taskPriorityOptions.map((q) {
+          final count = controller.pendingTasksForPriority(q.value).length;
+          return _miniStat(q.color, q.label, '$count');
         }).toList(),
       ),
     );
   }
+
   // 小统计项
   Widget _miniStat(Color color, String label, String count) {
     return Column(
       children: [
-        Text(count, style: TextStyle(
-          fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+        Text(
+          count,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
         Text(label, style: TextStyle(fontSize: 12, color: color)),
       ],
     );
   }
 
   // 单个象限
-  Widget _buildQuadrant(
-    _QuadrantConfig config,
-    List<TaskModel> allTasks,
-    TaskController controller,
-  ) {
-    final tasks = allTasks
-        .where((t) => t.priority == config.priority)
-        .toList();
+  Widget _buildQuadrant(TaskPriorityOption config, TaskController controller) {
+    final tasks = controller.pendingTasksForPriority(config.value);
 
     return Container(
       decoration: BoxDecoration(
@@ -163,7 +134,8 @@ class QuadrantPage extends StatelessWidget {
             decoration: BoxDecoration(
               color: config.color.withOpacity(0.15),
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12)),
+                top: Radius.circular(12),
+              ),
             ),
             child: Row(
               children: [
@@ -173,16 +145,20 @@ class QuadrantPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(config.title,
+                      Text(
+                        config.label,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: config.color,
                         ),
                       ),
-                      Text(config.subtitle,
+                      Text(
+                        config.subtitle,
                         style: TextStyle(
-                          fontSize: 10, color: config.color.withOpacity(0.7)),
+                          fontSize: 10,
+                          color: config.color.withOpacity(0.7),
+                        ),
                       ),
                     ],
                   ),
@@ -191,14 +167,17 @@ class QuadrantPage extends StatelessWidget {
                 if (tasks.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 2),
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: config.color,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Text('${tasks.length}',
-                      style: const TextStyle(
-                        fontSize: 10, color: Colors.white)),
+                    child: Text(
+                      '${tasks.length}',
+                      style: const TextStyle(fontSize: 10, color: Colors.white),
+                    ),
                   ),
               ],
             ),
@@ -206,19 +185,20 @@ class QuadrantPage extends StatelessWidget {
           // 任务列表
           Expanded(
             child: tasks.isEmpty
-              ? Center(
-                  child: Text('暂无任务',
-                    style: TextStyle(
-                      fontSize: 12, color: Colors.grey[400])),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(4),
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) {
-                    final task = tasks[index];
-                    return _buildTaskItem(task, controller, config.color);
-                  },
-                ),
+                ? Center(
+                    child: Text(
+                      '暂无任务',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(4),
+                    itemCount: tasks.length,
+                    itemBuilder: (context, index) {
+                      final task = tasks[index];
+                      return _buildTaskItem(task, controller, config.color);
+                    },
+                  ),
           ),
         ],
       ),
@@ -227,7 +207,9 @@ class QuadrantPage extends StatelessWidget {
 
   // 单个任务卡片
   Widget _buildTaskItem(
-    TaskModel task, TaskController controller, Color accentColor
+    TaskModel task,
+    TaskController controller,
+    Color accentColor,
   ) {
     return GestureDetector(
       onTap: () => _showTaskDetail(task, controller),
@@ -252,8 +234,8 @@ class QuadrantPage extends StatelessWidget {
               onTap: () => controller.updateTaskStatus(task),
               child: Icon(
                 task.isCompleted
-                  ? Icons.check_circle
-                  : Icons.radio_button_unchecked,
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
                 size: 18,
                 color: task.isCompleted ? accentColor : Colors.grey,
               ),
@@ -268,15 +250,15 @@ class QuadrantPage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   decoration: task.isCompleted
-                    ? TextDecoration.lineThrough
-                    : null,
+                      ? TextDecoration.lineThrough
+                      : null,
                   color: task.isCompleted ? Colors.grey : Colors.black87,
                 ),
               ),
             ),
             // 截止日期
             Text(
-               _formatDate(task.deadline),
+              _formatDate(task.deadline),
               style: TextStyle(fontSize: 10, color: Colors.grey[500]),
             ),
           ],
@@ -301,9 +283,13 @@ class QuadrantPage extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(task.title,
+                  child: Text(
+                    task.title,
                     style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
@@ -316,14 +302,17 @@ class QuadrantPage extends StatelessWidget {
             ),
             if (task.description != null) ...[
               const SizedBox(height: 8),
-              Text(task.description!, style: const TextStyle(color: Colors.grey)),
+              Text(
+                task.description!,
+                style: const TextStyle(color: Colors.grey),
+              ),
             ],
             const SizedBox(height: 12),
             Row(
               children: [
                 const Icon(Icons.flag, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
-                Text('优先级：${_quadrants[task.priority - 1].title}'),
+                Text('优先级：${taskPriorityOf(task.priority).label}'),
               ],
             ),
             const SizedBox(height: 4),
@@ -355,21 +344,4 @@ class QuadrantPage extends StatelessWidget {
   String _formatDate(DateTime date) {
     return '${date.month}/${date.day}';
   }
-}
-
-// 象限配置类
-class _QuadrantConfig {
-  final String title;
-  final String subtitle;
-  final int priority;
-  final Color color;
-  final IconData icon;
-
-  const _QuadrantConfig({
-    required this.title,
-    required this.subtitle,
-    required this.priority,
-    required this.color,
-    required this.icon,
-  });
 }

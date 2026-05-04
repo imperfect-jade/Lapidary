@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:todolist/page/task/task_controller.dart';
 import 'package:todolist/model/task/task.dart';
 import 'package:todolist/constants/theme.dart';
-
+import 'package:todolist/constants/task_priority.dart';
 
 class TaskPage extends StatelessWidget {
   TaskPage({Key? key}) : super(key: key);
@@ -11,6 +11,7 @@ class TaskPage extends StatelessWidget {
   final TaskController controller = Get.find<TaskController>();
   // 创建任务详情弹窗
   void _showTaskDetailDialog(TaskModel task) {
+    final priority = taskPriorityOf(task.priority);
     Get.dialog(
       AlertDialog(
         title: Text(
@@ -30,11 +31,19 @@ class TaskPage extends StatelessWidget {
               // 完成状态
               Row(
                 children: [
-                  const Text('完成状态: ', style: TextStyle(fontWeight: FontWeight.w500)),
+                  const Text(
+                    '完成状态: ',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: task.isCompleted ? Colors.green[100] : Colors.orange[100],
+                      color: task.isCompleted
+                          ? Colors.green[100]
+                          : Colors.orange[100],
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -49,31 +58,37 @@ class TaskPage extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               // 截止日期
-              const Text('截止日期:', style: TextStyle(fontWeight: FontWeight.w500)),
+              const Text(
+                '截止日期:',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
               Text(task.deadline.toLocal().toString().split(' ')[0]),
               const SizedBox(height: 12),
               // 创建时间
-              const Text('创建时间:', style: TextStyle(fontWeight: FontWeight.w500)),
+              const Text(
+                '创建时间:',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
               Text(task.createdAt.toLocal().toString().split(' ')[0]),
               const SizedBox(height: 12),
 
               // 优先级
               const Text('优先级:', style: TextStyle(fontWeight: FontWeight.w500)),
-              Text(priorityOptions.firstWhere(
-                                (p) => p['value'] == task.priority,
-                                orElse: () => priorityOptions[2])['label'],
-                                style: TextStyle(
-                                  color: priorityOptions.firstWhere(
-                                    (p) => p['value'] == task.priority,
-                                    orElse: () => priorityOptions[2])['color'] as Color,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+              Text(
+                priority.label,
+                style: TextStyle(
+                  color: priority.color,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
 
               const SizedBox(height: 12),
               // 完整描述
               if (task.description != null && task.description!.isNotEmpty) ...[
-                const Text('任务描述:', style: TextStyle(fontWeight: FontWeight.w500)),
+                const Text(
+                  '任务描述:',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
                 const SizedBox(height: 4),
                 Text(task.description!),
               ] else ...[
@@ -83,23 +98,11 @@ class TaskPage extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('关闭'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('关闭')),
         ],
       ),
     );
   }
-
-
-  // 创建优先级配置
-  final List<Map<String, dynamic>> priorityOptions = [
-    {'value': 1, 'label': '紧急且重要', 'color': Colors.red},
-    {'value': 2, 'label': '紧急不重要', 'color': Colors.orange},
-    {'value': 3, 'label': '重要不紧急', 'color': Colors.blue},
-    {'value': 4, 'label': '不紧急不重要', 'color': Colors.grey},
-  ];
 
   //创建添加任务弹窗
   void _showAddTaskDialog() {
@@ -139,7 +142,10 @@ class TaskPage extends StatelessWidget {
                 // 左侧优先级文本
                 const Expanded(
                   flex: 2,
-                  child: Text('优先级:', style: TextStyle(fontWeight: FontWeight.w500)),
+                  child: Text(
+                    '优先级:',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 // 右侧优先级下拉选择
@@ -158,14 +164,13 @@ class TaskPage extends StatelessWidget {
                           child: Center(
                             child: Obx(() {
                               // 遍历列表查找当前选中的优先级
-                              final option = priorityOptions.firstWhere(
-                                (p) => p['value'] == selectedPriority.value,
-                                orElse: () => priorityOptions[2],
+                              final option = taskPriorityOf(
+                                selectedPriority.value,
                               );
                               return Text(
-                                option['label'],
+                                option.label,
                                 style: TextStyle(
-                                  color: option['color'] as Color,
+                                  color: option.color,
                                   fontWeight: FontWeight.w500,
                                 ),
                               );
@@ -178,21 +183,23 @@ class TaskPage extends StatelessWidget {
                           onSelected: (value) {
                             selectedPriority.value = value; // 更新选中的优先级
                           },
-                          itemBuilder: (context) => priorityOptions.map((option) {
+                          itemBuilder: (context) => taskPriorityOptions.map((
+                            option,
+                          ) {
                             return PopupMenuItem<int>(
-                              value: option['value'],
+                              value: option.value,
                               child: Row(
                                 children: [
                                   Container(
                                     width: 12,
                                     height: 12,
                                     decoration: BoxDecoration(
-                                      color: option['color'] as Color,
+                                      color: option.color,
                                       borderRadius: BorderRadius.circular(2),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(option['label']),
+                                  Text(option.label),
                                 ],
                               ),
                             );
@@ -218,16 +225,17 @@ class TaskPage extends StatelessWidget {
                   selectedDate.value = date;
                 }
               },
-              child: Obx(() => Text('选择完成日期: ${selectedDate.value.toLocal().toString().split(' ')[0]}')),
+              child: Obx(
+                () => Text(
+                  '选择完成日期: ${selectedDate.value.toLocal().toString().split(' ')[0]}',
+                ),
+              ),
             ),
           ],
         ),
         // 添加按钮
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('取消'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('取消')),
           ElevatedButton(
             onPressed: () {
               if (titleController.text.isNotEmpty) {
@@ -235,7 +243,9 @@ class TaskPage extends StatelessWidget {
                   titleController.text,
                   selectedDate.value,
                   priority: selectedPriority.value,
-                  description: descriptionController.text.isEmpty ? null : descriptionController.text,
+                  description: descriptionController.text.isEmpty
+                      ? null
+                      : descriptionController.text,
                 );
                 Get.back();
               }
@@ -261,100 +271,103 @@ class TaskPage extends StatelessWidget {
         foregroundColor: Colors.black,
         elevation: 0,
       ),
-      body: Obx(() {
-        final tasks = controller.taskList.toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        //判断是否有任务
-        if (tasks.isEmpty) {
-          return const Center(
-            child: Text(
-              '暂无任务',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          );
-        }
-        //具体任务列表
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: tasks.length,
-          itemBuilder: (context, index) {
-            final task = tasks[index];
-            //任务卡片
-            return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              //列表行组件
-              child: ListTile(
-                // 点击卡片显示详情
-                onTap: () => _showTaskDetailDialog(task),
-                //左侧勾选框
-                leading: Checkbox(
-                  value: task.isCompleted,
-                  onChanged: (value) {
-                    //勾选则更新为完成状态
-                    controller.updateTaskStatus(task);
-                  },
-                ),
-                title: Text(
-                  task.title,
-                  style: TextStyle(
-                    //判断是否完成，添加删除线
-                    decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-                    color: task.isCompleted ? Colors.grey : Colors.black,
-                  ),
-                ),
-                //任务描述
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (task.description != null && task.description!.isNotEmpty)
-                      Text(
-                        task.description!,
-                        style: const TextStyle(color: Colors.grey),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '创建时间: ${task.createdAt.toLocal().toString().split(' ')[0]}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-                //右侧删除按钮
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () {
-                    Get.dialog(
-                      AlertDialog(
-                        title: const Text('删除任务'),
-                        content: const Text('确定要删除这个任务吗？'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Get.back(),
-                            child: const Text('取消'),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              controller.deleteTask(task);
-                              Get.back();
-                            },
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                            child: const Text('删除'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+      body: GetBuilder<TaskController>(
+        id: 'task_list',
+        builder: (controller) {
+          final tasks = controller.sortedTasks;
+          //判断是否有任务
+          if (tasks.isEmpty) {
+            return const Center(
+              child: Text(
+                '暂无任务',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
             );
-          },
-        );
-      }),
+          }
+          //具体任务列表
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: tasks.length,
+            itemBuilder: (context, index) {
+              final task = tasks[index];
+              return GetBuilder<TaskController>(
+                id: 'task_${task.id}',
+                builder: (controller) => _buildTaskCard(task),
+              );
+            },
+          );
+        },
+      ),
       //浮动添加任务按钮
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddTaskDialog,
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildTaskCard(TaskModel task) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        onTap: () => _showTaskDetailDialog(task),
+        leading: Checkbox(
+          value: task.isCompleted,
+          onChanged: (value) {
+            controller.updateTaskStatus(task);
+          },
+        ),
+        title: Text(
+          task.title,
+          style: TextStyle(
+            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+            color: task.isCompleted ? Colors.grey : Colors.black,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (task.description != null && task.description!.isNotEmpty)
+              Text(
+                task.description!,
+                style: const TextStyle(color: Colors.grey),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            const SizedBox(height: 4),
+            Text(
+              '创建时间: ${task.createdAt.toLocal().toString().split(' ')[0]}',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete_outline, color: Colors.red),
+          onPressed: () {
+            Get.dialog(
+              AlertDialog(
+                title: const Text('删除任务'),
+                content: const Text('确定要删除这个任务吗？'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Get.back(),
+                    child: const Text('取消'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      controller.deleteTask(task);
+                      Get.back();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                    ),
+                    child: const Text('删除'),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

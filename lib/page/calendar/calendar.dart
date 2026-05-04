@@ -21,7 +21,6 @@ class CalendarPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final calenderController = Get.find<CalendarController>();
-    final taskController = Get.find<TaskController>();
 
     return Scaffold(
       backgroundColor: TaskTheme.primaryColor,
@@ -32,24 +31,36 @@ class CalendarPage extends StatelessWidget {
         title: const Text('日历'),
         actions: [
           // 同步权限状态
-          Obx(() => IconButton(
-            icon: Icon(
-              calenderController.hasPermission.value 
-                ? Icons.sync 
-                : Icons.sync_disabled,
+          Obx(
+            () => IconButton(
+              icon: Icon(
+                calenderController.hasPermission.value
+                    ? Icons.sync
+                    : Icons.sync_disabled,
+              ),
+              onPressed: () => calenderController.requestPermission(),
             ),
-            onPressed: () => calenderController.requestPermission(),
-          )),
+          ),
         ],
       ),
       body: Column(
         children: [
           // 日历组件
-          _buildCalendar(calenderController, taskController),
-          const Divider(height: 1),
-          // 当日事项列表
           Expanded(
-            child: _buildDayList(calenderController, taskController),
+            child: GetBuilder<TaskController>(
+              id: 'calendar',
+              builder: (taskController) {
+                return Column(
+                  children: [
+                    _buildCalendar(calenderController, taskController),
+                    const Divider(height: 1),
+                    Expanded(
+                      child: _buildDayList(calenderController, taskController),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -58,36 +69,29 @@ class CalendarPage extends StatelessWidget {
 
   // 日历视图
   Widget _buildCalendar(
-    CalendarController calenderController, 
+    CalendarController calenderController,
     TaskController taskController,
   ) {
     return Obx(() {
-      // 访问 taskList 触发响应式更新
-      final key = taskController.taskList.length;
       final selected = calenderController.selectedDate.value;
-      
+
       return TableCalendar(
-        key: ValueKey(key),
         firstDay: DateTime(2024, 1, 1),
         lastDay: DateTime(2027, 12, 31),
         focusedDay: selected,
         selectedDayPredicate: (day) => isSameDay(selected, day),
-        
+
         // 点击日期
         onDaySelected: (selected, focused) {
           calenderController.selectedDate.value = selected;
           calenderController.loadDeviceEvents(selected);
         },
-        
+
         // 有任务的日期下方显示标记点
         eventLoader: (day) {
-          return taskController.taskList.where((t) =>
-            t.deadline.year == day.year &&
-            t.deadline.month == day.month &&
-            t.deadline.day == day.day
-          ).toList();
+          return taskController.tasksForDay(day);
         },
-        
+
         // 样式
         calendarStyle: CalendarStyle(
           todayDecoration: BoxDecoration(
@@ -104,7 +108,7 @@ class CalendarPage extends StatelessWidget {
           ),
           markersMaxCount: 3,
         ),
-        
+
         headerStyle: const HeaderStyle(
           formatButtonVisible: false,
           titleCentered: true,
@@ -121,8 +125,10 @@ class CalendarPage extends StatelessWidget {
     return Obx(() {
       final selected = calenderController.selectedDate.value;
       final items = calenderController.getItemsForDate(
-        selected, taskController.taskList);
-      
+        selected,
+        taskController.tasksForDay(selected),
+      );
+
       if (items.isEmpty) {
         return Center(
           child: Column(
@@ -130,13 +136,12 @@ class CalendarPage extends StatelessWidget {
             children: [
               Icon(Icons.event_available, size: 48, color: Colors.grey[300]),
               const SizedBox(height: 8),
-              Text('当天没有事项',
-                style: TextStyle(color: Colors.grey[400])),
+              Text('当天没有事项', style: TextStyle(color: Colors.grey[400])),
             ],
           ),
         );
       }
-      
+
       return ListView.builder(
         padding: const EdgeInsets.all(12),
         itemCount: items.length,
@@ -155,10 +160,10 @@ class CalendarPage extends StatelessWidget {
     TaskController taskController,
   ) {
     final isApp = item.source == 'app';
-    final color = isApp 
-      ? (_priorityColors[item.priority] ?? Colors.grey) 
-      : Colors.purple;
-    
+    final color = isApp
+        ? (_priorityColors[item.priority] ?? Colors.grey)
+        : Colors.purple;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       shape: RoundedRectangleBorder(
@@ -177,8 +182,9 @@ class CalendarPage extends StatelessWidget {
         title: Text(
           item.title,
           style: TextStyle(
-            decoration: item.isCompleted == true 
-              ? TextDecoration.lineThrough : null,
+            decoration: item.isCompleted == true
+                ? TextDecoration.lineThrough
+                : null,
             color: item.isCompleted == true ? Colors.grey : null,
           ),
         ),
@@ -188,7 +194,9 @@ class CalendarPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
-                color: isApp ? Colors.blue.withOpacity(0.1) : Colors.purple.withOpacity(0.1),
+                color: isApp
+                    ? Colors.blue.withOpacity(0.1)
+                    : Colors.purple.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -205,17 +213,18 @@ class CalendarPage extends StatelessWidget {
             ],
           ],
         ),
-        trailing: isApp 
-          ? Checkbox(
-              value: item.isCompleted ?? false,
-              onChanged: (_) {
-                final task = taskController.taskList.firstWhere(
-                  (t) => t.id == item.taskId);
-                taskController.updateTaskStatus(task);
-              },
-            )
-          : null,
-          // 点击事件显示详情
+        trailing: isApp
+            ? Checkbox(
+                value: item.isCompleted ?? false,
+                onChanged: (_) {
+                  final task = taskController.taskList.firstWhere(
+                    (t) => t.id == item.taskId,
+                  );
+                  taskController.updateTaskStatus(task);
+                },
+              )
+            : null,
+        // 点击事件显示详情
         onTap: () => _showItemDetail(item, calenderController, taskController),
       ),
     );
@@ -238,12 +247,16 @@ class CalendarPage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(item.title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              item.title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             if (item.description != null && item.description!.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text(item.description!,
-                style: const TextStyle(color: Colors.grey)),
+              Text(
+                item.description!,
+                style: const TextStyle(color: Colors.grey),
+              ),
             ],
             const SizedBox(height: 12),
             // 如果是APP任务，提供同步到手机日历的选项
@@ -256,8 +269,11 @@ class CalendarPage extends StatelessWidget {
                 onTap: () async {
                   //同步任务到手机日历
                   final task = taskController.taskList.firstWhere(
-                    (t) => t.id == item.taskId);
-                  final success = await calenderController.syncTaskToCalendar(task);
+                    (t) => t.id == item.taskId,
+                  );
+                  final success = await calenderController.syncTaskToCalendar(
+                    task,
+                  );
                   Get.back();
                   Get.snackbar(
                     success ? '同步成功' : '同步失败',
@@ -270,7 +286,8 @@ class CalendarPage extends StatelessWidget {
                 title: const Text('删除任务'),
                 onTap: () {
                   final task = taskController.taskList.firstWhere(
-                    (t) => t.id == item.taskId);
+                    (t) => t.id == item.taskId,
+                  );
                   taskController.deleteTask(task);
                   Get.back();
                 },
@@ -279,8 +296,10 @@ class CalendarPage extends StatelessWidget {
             // 如果是手机日历事件
             if (item.source == 'device') ...[
               const Divider(),
-              const Text('来自手机日历',
-                style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const Text(
+                '来自手机日历',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
               if (item.startTime != null)
                 Text('时间：${_formatDateTime(item.startTime!)}'),
             ],

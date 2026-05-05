@@ -1,15 +1,41 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:todolist/model/pet/pet.dart';
 
 enum PetAction { idle, pet, feed, sleep }
 
+class PetFood {
+  final String name;
+  final int cost;
+  final int hungerBoost;
+  final int moodBoost;
+
+  const PetFood({
+    required this.name,
+    required this.cost,
+    required this.hungerBoost,
+    required this.moodBoost,
+  });
+}
+
 class PetController extends GetxController {
+  static const List<PetFood> shopFoods = [
+    PetFood(name: '小鱼干', cost: 20, hungerBoost: 12, moodBoost: 4),
+    PetFood(name: '猫罐头', cost: 45, hungerBoost: 28, moodBoost: 10),
+    PetFood(name: '豪华猫饭', cost: 80, hungerBoost: 45, moodBoost: 18),
+  ];
+
   final Rxn<PetModel> pet = Rxn<PetModel>();
   final message = '今天也一起慢慢完成任务吧'.obs;
   final action = PetAction.idle.obs;
+  final feedbackTick = 0.obs;
+  final feedbackAction = PetAction.idle.obs;
 
   late Box<PetModel> petBox;
+  Timer? _stateTimer;
+  Timer? _messageResetTimer;
 
   int get expToNextLevel => (pet.value?.level ?? 1) * 40;
 
@@ -26,6 +52,7 @@ class PetController extends GetxController {
     super.onInit();
     petBox = Hive.box<PetModel>('pets');
     _loadPet();
+    _startStateTimer();
   }
 
   Future<void> _loadPet() async {
@@ -34,6 +61,7 @@ class PetController extends GetxController {
       final defaultPet = PetModel.defaultCat();
       await petBox.put(defaultPet.id, defaultPet);
       pet.value = defaultPet;
+      message.value = _statusMessage(defaultPet);
       return;
     }
 
@@ -42,32 +70,36 @@ class PetController extends GetxController {
   }
 
   Future<void> refreshPetState() async {
+    await _applyTimeDelta(DateTime.now());
+  }
+
+  Future<void> _applyTimeDelta(DateTime now) async {
     final currentPet = pet.value;
     if (currentPet == null) {
       return;
     }
 
-    final now = DateTime.now();
-    final elapsedHours = now
+    final elapsedMinutes = now
         .difference(currentPet.lastInteractionAt)
-        .inHours;
+        .inMinutes;
 
-    if (elapsedHours <= 0) {
+    if (elapsedMinutes <= 0) {
       return;
     }
 
-    currentPet.hunger = _clampStat(currentPet.hunger - elapsedHours * 3);
-    currentPet.mood = _clampStat(currentPet.mood - elapsedHours * 2);
+    currentPet.hunger = _clampStat(currentPet.hunger - elapsedMinutes);
+    currentPet.mood = _clampStat(currentPet.mood - elapsedMinutes);
     currentPet.energy = currentPet.isSleeping
-        ? _clampStat(currentPet.energy + elapsedHours * 8)
-        : _clampStat(currentPet.energy - elapsedHours);
+        ? _clampStat(currentPet.energy + elapsedMinutes * 2)
+        : _clampStat(currentPet.energy - (elapsedMinutes ~/ 3));
     currentPet.lastInteractionAt = now;
 
-    if (currentPet.energy >= 95 && currentPet.isSleeping) {
+    if (currentPet.energy >= 100 && currentPet.isSleeping) {
       currentPet.isSleeping = false;
-      message.value = '${currentPet.name}睡醒啦，精神很好';
-    } else {
-      message.value = _statusMessage(currentPet);
+      action.value = PetAction.idle;
+      _showTemporaryMessage('${currentPet.name}睡醒啦，精神很好');
+    } else if (_messageResetTimer == null || !_messageResetTimer!.isActive) {
+      _restoreStatusMessage();
     }
 
     await _saveAndNotify();
@@ -84,14 +116,19 @@ class PetController extends GetxController {
     currentPet.mood = _clampStat(currentPet.mood + 12);
     currentPet.energy = _clampStat(currentPet.energy - 2);
     currentPet.lastInteractionAt = DateTime.now();
-    message.value = '${currentPet.name}蹭了蹭你的手';
     action.value = PetAction.pet;
+    _emitFeedback(PetAction.pet);
+    _showTemporaryMessage('${currentPet.name}蹭了蹭你的手');
     _gainExp(8);
     await _saveAndNotify();
     _resetActionLater();
   }
 
   Future<void> feed() async {
+    _showTemporaryMessage('请选择已购买的食物来喂小猫');
+  }
+
+  Future<void> feedWithFood(PetFood food) async {
     final currentPet = pet.value;
     if (currentPet == null) {
       return;
@@ -99,12 +136,13 @@ class PetController extends GetxController {
 
     await refreshPetState();
     currentPet.isSleeping = false;
-    currentPet.hunger = _clampStat(currentPet.hunger + 18);
-    currentPet.mood = _clampStat(currentPet.mood + 6);
+    currentPet.hunger = _clampStat(currentPet.hunger + food.hungerBoost);
+    currentPet.mood = _clampStat(currentPet.mood + food.moodBoost);
     currentPet.lastInteractionAt = DateTime.now();
-    message.value = '${currentPet.name}吃饱了，尾巴摇得很开心';
     action.value = PetAction.feed;
-    _gainExp(6);
+    _emitFeedback(PetAction.feed);
+    _showTemporaryMessage('${currentPet.name}吃了${food.name}，很满足');
+    _gainExp(10 + food.cost ~/ 10);
     await _saveAndNotify();
     _resetActionLater();
   }
@@ -119,9 +157,12 @@ class PetController extends GetxController {
     currentPet.isSleeping = !currentPet.isSleeping;
     currentPet.lastInteractionAt = DateTime.now();
     action.value = currentPet.isSleeping ? PetAction.sleep : PetAction.idle;
-    message.value = currentPet.isSleeping
-        ? '${currentPet.name}蜷起来睡觉了'
-        : '${currentPet.name}醒来陪你啦';
+    _emitFeedback(currentPet.isSleeping ? PetAction.sleep : PetAction.idle);
+    _showTemporaryMessage(
+      currentPet.isSleeping
+          ? '${currentPet.name}蜷起来睡觉了'
+          : '${currentPet.name}醒来陪你啦',
+    );
     if (!currentPet.isSleeping) {
       _gainExp(4);
     }
@@ -139,7 +180,7 @@ class PetController extends GetxController {
       currentPet.exp -= expToNextLevel;
       currentPet.level++;
       currentPet.mood = _clampStat(currentPet.mood + 10);
-      message.value = '${currentPet.name}升级到 Lv.${currentPet.level} 啦';
+      _showTemporaryMessage('${currentPet.name}升级到 Lv.${currentPet.level} 啦');
     }
   }
 
@@ -161,7 +202,38 @@ class PetController extends GetxController {
     });
   }
 
+  void _startStateTimer() {
+    _stateTimer?.cancel();
+    _stateTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      refreshPetState();
+    });
+  }
+
+  void _showTemporaryMessage(String text) {
+    message.value = text;
+    _messageResetTimer?.cancel();
+    _messageResetTimer = Timer(const Duration(milliseconds: 2600), () {
+      _restoreStatusMessage();
+    });
+  }
+
+  void _restoreStatusMessage() {
+    final currentPet = pet.value;
+    if (currentPet == null) {
+      return;
+    }
+    message.value = _statusMessage(currentPet);
+  }
+
+  void _emitFeedback(PetAction nextAction) {
+    feedbackAction.value = nextAction;
+    feedbackTick.value++;
+  }
+
   String _statusMessage(PetModel currentPet) {
+    if (currentPet.isSleeping) {
+      return '${currentPet.name}正在睡觉恢复精力';
+    }
     if (currentPet.hunger < 35) {
       return '${currentPet.name}有点饿了';
     }
@@ -176,5 +248,12 @@ class PetController extends GetxController {
 
   int _clampStat(int value) {
     return value.clamp(0, 100).toInt();
+  }
+
+  @override
+  void onClose() {
+    _stateTimer?.cancel();
+    _messageResetTimer?.cancel();
+    super.onClose();
   }
 }

@@ -2,6 +2,7 @@
 import 'package:get/get.dart';
 import 'package:todolist/model/task/task.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:todolist/page/pet/reward_controller.dart';
 
 class TaskController extends GetxController {
   final RxList<TaskModel> taskList = <TaskModel>[].obs;
@@ -74,8 +75,23 @@ class TaskController extends GetxController {
 
   //修改任务状态
   Future<void> updateTaskStatus(TaskModel task) async {
+    final wasCompleted = task.isCompleted;
     task.isCompleted = !task.isCompleted;
     await task.save(); // 存入Hive
+    if (!wasCompleted &&
+        task.isCompleted &&
+        Get.isRegistered<RewardController>()) {
+      final reward = await Get.find<RewardController>().awardTaskCompletion(
+        task,
+      );
+      if (reward > 0) {
+        Get.snackbar(
+          '任务完成奖励',
+          '获得 $reward 积分',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    }
     _rebuildCaches();
     update(['task_${task.id}', 'quadrant', 'calendar']);
   }

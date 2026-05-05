@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:todolist/constants/theme.dart';
 import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
+import 'package:todolist/page/pet/reward_controller.dart';
 
 //宠物页面
 class PetPage extends StatefulWidget {
@@ -18,6 +19,7 @@ class PetPage extends StatefulWidget {
 
 class _PetPageState extends State<PetPage> {
   final PetController controller = Get.find<PetController>();
+  final RewardController rewardController = Get.find<RewardController>();
 
   @override
   void initState() {
@@ -53,8 +55,17 @@ class _PetPageState extends State<PetPage> {
               _GrowthPanel(controller: controller, pet: pet),
               const SizedBox(height: 14),
               _StatusGrid(pet: pet),
-              const SizedBox(height: 20),
-              _ActionBar(controller: controller, pet: pet),
+              const SizedBox(height: 14),
+              _ActionBar(
+                controller: controller,
+                pet: pet,
+                rewardController: rewardController,
+              ),
+              const SizedBox(height: 14),
+              _RewardShopPanel(
+                petController: controller,
+                rewardController: rewardController,
+              ),
             ],
           ),
         );
@@ -161,6 +172,7 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
   late final AnimationController _walkController;
   Timer? _frameTimer;
   ui.Image? _spriteImage;
+  bool _spriteLoadFailed = false;
   int _frameIndex = 0;
   bool _facingLeft = false;
   PetAction _lastAction = PetAction.idle;
@@ -172,12 +184,13 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
       vsync: this,
       duration: const Duration(milliseconds: 1600),
     )..repeat(reverse: true);
-    _walkController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 5200),
-    )
-      ..addStatusListener(_handleWalkStatus)
-      ..repeat(reverse: true);
+    _walkController =
+        AnimationController(
+            vsync: this,
+            duration: const Duration(milliseconds: 5200),
+          )
+          ..addStatusListener(_handleWalkStatus)
+          ..repeat(reverse: true);
     _loadSprite();
     _startFrameTimer();
   }
@@ -209,14 +222,24 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
   }
 
   Future<void> _loadSprite() async {
-    final data = await rootBundle.load(_spritePath);
-    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
-    final frame = await codec.getNextFrame();
-    if (!mounted) {
-      frame.image.dispose();
-      return;
+    try {
+      final data = await rootBundle.load(_spritePath);
+      final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+      final frame = await codec.getNextFrame();
+      if (!mounted) {
+        frame.image.dispose();
+        return;
+      }
+      setState(() {
+        _spriteImage = frame.image;
+        _spriteLoadFailed = false;
+      });
+    } catch (error) {
+      debugPrint('Failed to load pet sprite: $error');
+      if (mounted) {
+        setState(() => _spriteLoadFailed = true);
+      }
     }
-    setState(() => _spriteImage = frame.image);
   }
 
   void _startFrameTimer() {
@@ -267,8 +290,8 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
               final idleLift = widget.pet.isSleeping
                   ? 1.5 * _idleController.value
                   : 5 * _idleController.value;
-              final actionBounce = action == PetAction.pet ||
-                      action == PetAction.feed
+              final actionBounce =
+                  action == PetAction.pet || action == PetAction.feed
                   ? -12.0
                   : 0.0;
               final walkRange = (constraints.maxWidth - 176)
@@ -280,15 +303,15 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
               final row = widget.pet.isSleeping
                   ? _actionRows[PetAction.sleep]!
                   : action == PetAction.idle
-                      ? 1
-                      : _actionRows[action] ?? 1;
+                  ? 1
+                  : _actionRows[action] ?? 1;
 
               return Transform.translate(
                 offset: Offset(walkOffset, actionBounce - idleLift),
                 child: Transform.scale(
                   scaleX: _facingLeft ? -1 : 1,
                   child: image == null
-                      ? const SizedBox(width: 176, height: 176)
+                      ? _SpriteLoadPlaceholder(failed: _spriteLoadFailed)
                       : CustomPaint(
                           size: const Size(176, 176),
                           painter: _SpriteSheetPainter(
@@ -308,6 +331,25 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
   }
 }
 
+class _SpriteLoadPlaceholder extends StatelessWidget {
+  final bool failed;
+
+  const _SpriteLoadPlaceholder({required this.failed});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 176,
+      height: 176,
+      child: failed
+          ? const Center(
+              child: Text('小猫加载中断', style: TextStyle(color: Colors.grey)),
+            )
+          : const SizedBox.shrink(),
+    );
+  }
+}
+
 class _PetFeedbackOverlay extends StatelessWidget {
   final PetController controller;
   final PetModel pet;
@@ -317,7 +359,8 @@ class _PetFeedbackOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final action = controller.action.value;
+      final tick = controller.feedbackTick.value;
+      final feedbackAction = controller.feedbackAction.value;
       if (pet.isSleeping) {
         return const Positioned(
           top: 48,
@@ -330,22 +373,56 @@ class _PetFeedbackOverlay extends StatelessWidget {
         );
       }
 
-      if (action == PetAction.pet) {
-        return const Positioned(
-          top: 58,
-          right: 82,
-          child: _FloatingFeedback(
-            icon: Icons.favorite,
-            color: Colors.pinkAccent,
+      if (feedbackAction == PetAction.pet && tick > 0) {
+        return Positioned(
+          key: ValueKey('pet_feedback_$tick'),
+          top: 48,
+          right: 64,
+          child: SizedBox(
+            width: 92,
+            height: 76,
+            child: Stack(
+              children: const [
+                Positioned(
+                  left: 30,
+                  top: 16,
+                  child: _FloatingFeedback(
+                    icon: Icons.favorite,
+                    color: Colors.pinkAccent,
+                  ),
+                ),
+                Positioned(
+                  left: 8,
+                  top: 28,
+                  child: _FloatingFeedback(
+                    icon: Icons.favorite,
+                    color: Color.fromARGB(255, 255, 121, 164),
+                    delay: Duration(milliseconds: 110),
+                    size: 30,
+                  ),
+                ),
+                Positioned(
+                  right: 6,
+                  top: 22,
+                  child: _FloatingFeedback(
+                    icon: Icons.favorite,
+                    color: Color.fromARGB(255, 255, 93, 135),
+                    delay: Duration(milliseconds: 210),
+                    size: 32,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       }
 
-      if (action == PetAction.feed) {
-        return const Positioned(
+      if (feedbackAction == PetAction.feed && tick > 0) {
+        return Positioned(
+          key: ValueKey('feed_feedback_$tick'),
           bottom: 72,
           right: 78,
-          child: _FloatingFeedback(
+          child: const _FloatingFeedback(
             icon: Icons.rice_bowl,
             color: Colors.orange,
           ),
@@ -361,11 +438,15 @@ class _FloatingFeedback extends StatefulWidget {
   final IconData icon;
   final Color color;
   final String? label;
+  final Duration delay;
+  final double size;
 
   const _FloatingFeedback({
     required this.icon,
     required this.color,
     this.label,
+    this.delay = Duration.zero,
+    this.size = 38,
   });
 
   @override
@@ -385,7 +466,16 @@ class _FloatingFeedbackState extends State<_FloatingFeedback>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
-    )..forward();
+    );
+    if (widget.delay == Duration.zero) {
+      _controller.forward();
+    } else {
+      Future.delayed(widget.delay, () {
+        if (mounted) {
+          _controller.forward();
+        }
+      });
+    }
     _opacity = TweenSequence<double>([
       TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 20),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 80),
@@ -394,9 +484,10 @@ class _FloatingFeedbackState extends State<_FloatingFeedback>
       begin: const Offset(0, 10),
       end: const Offset(0, -22),
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-    _scale = Tween<double>(begin: 0.85, end: 1.15).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
+    _scale = Tween<double>(
+      begin: 0.85,
+      end: 1.15,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
   }
 
   @override
@@ -414,16 +505,13 @@ class _FloatingFeedbackState extends State<_FloatingFeedback>
           opacity: _opacity.value,
           child: Transform.translate(
             offset: _offset.value,
-            child: Transform.scale(
-              scale: _scale.value,
-              child: child,
-            ),
+            child: Transform.scale(scale: _scale.value, child: child),
           ),
         );
       },
       child: Container(
-        width: 38,
-        height: 38,
+        width: widget.size,
+        height: widget.size,
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.86),
           shape: BoxShape.circle,
@@ -437,12 +525,12 @@ class _FloatingFeedbackState extends State<_FloatingFeedback>
         ),
         child: Center(
           child: widget.label == null
-              ? Icon(widget.icon, color: widget.color, size: 22)
+              ? Icon(widget.icon, color: widget.color, size: widget.size * 0.58)
               : Text(
                   widget.label!,
                   style: TextStyle(
                     color: widget.color,
-                    fontSize: 18,
+                    fontSize: widget.size * 0.47,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -599,40 +687,360 @@ class _StatusCard extends StatelessWidget {
   }
 }
 
-class _ActionBar extends StatelessWidget {
-  final PetController controller;
-  final PetModel pet;
+class _RewardShopPanel extends StatefulWidget {
+  final PetController petController;
+  final RewardController rewardController;
 
-  const _ActionBar({required this.controller, required this.pet});
+  const _RewardShopPanel({
+    required this.petController,
+    required this.rewardController,
+  });
+
+  @override
+  State<_RewardShopPanel> createState() => _RewardShopPanelState();
+}
+
+class _RewardShopPanelState extends State<_RewardShopPanel> {
+  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Obx(
+                () => Row(
+                  children: [
+                    const Icon(Icons.stars, color: Colors.amber),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '奖励积分：${widget.rewardController.points}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const Text(
+                      '宠物商城',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      _expanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Column(
+              children: [
+                const SizedBox(height: 12),
+                ...PetController.shopFoods.map(
+                  (food) => _FoodShopItem(
+                    food: food,
+                    rewardController: widget.rewardController,
+                  ),
+                ),
+              ],
+            ),
+            crossFadeState: _expanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 180),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FoodInventoryLine extends StatelessWidget {
+  final RewardController rewardController;
+
+  const _FoodInventoryLine({required this.rewardController});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final ownedFoods = PetController.shopFoods
+          .where((food) => rewardController.foodCount(food.name) > 0)
+          .toList();
+      if (ownedFoods.isEmpty) {
+        return const Text(
+          '库存：暂无食物',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        );
+      }
+
+      return Wrap(
+        spacing: 6,
+        runSpacing: 4,
+        children: ownedFoods
+            .map(
+              (food) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '${food.name} x${rewardController.foodCount(food.name)}',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
+            )
+            .toList(),
+      );
+    });
+  }
+}
+
+class _FoodPickerSheet extends StatelessWidget {
+  final PetController petController;
+  final RewardController rewardController;
+
+  const _FoodPickerSheet({
+    required this.petController,
+    required this.rewardController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: Obx(() {
+        final ownedFoods = PetController.shopFoods
+            .where((food) => rewardController.foodCount(food.name) > 0)
+            .toList();
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '选择食物',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            if (ownedFoods.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 18),
+                child: Center(
+                  child: Text(
+                    '还没有食物，先去商城兑换吧',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              )
+            else
+              ...ownedFoods.map(
+                (food) => ListTile(
+                  leading: const Icon(Icons.restaurant, color: Colors.orange),
+                  title: Text(food.name),
+                  subtitle: Text(
+                    '拥有 ${rewardController.foodCount(food.name)} 份  ·  +${food.hungerBoost} 饱腹  +${food.moodBoost} 心情',
+                  ),
+                  onTap: () => _useFood(food),
+                ),
+              ),
+            const SizedBox(height: 8),
+          ],
+        );
+      }),
+    );
+  }
+
+  Future<void> _useFood(PetFood food) async {
+    final consumed = await rewardController.consumeFood(food);
+    if (!consumed) {
+      Get.snackbar('没有库存', '先去商城兑换这个食物吧', snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
+    await petController.feedWithFood(food);
+    Get.back();
+  }
+}
+
+class _ActionBar extends StatelessWidget {
+  final PetController controller;
+  final PetModel pet;
+  final RewardController rewardController;
+
+  const _ActionBar({
+    required this.controller,
+    required this.pet,
+    required this.rewardController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
       children: [
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: controller.petCat,
-            icon: const Icon(Icons.pan_tool_alt),
-            label: const Text('抚摸'),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: controller.petCat,
+                icon: const Icon(Icons.pan_tool_alt),
+                label: const Text('抚摸'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => _showFoodPicker(),
+                icon: const Icon(Icons.rice_bowl),
+                label: const Text('喂食'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: controller.toggleSleep,
+                icon: Icon(pet.isSleeping ? Icons.wb_sunny : Icons.bedtime),
+                label: Text(pet.isSleeping ? '唤醒' : '睡觉'),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: controller.feed,
-            icon: const Icon(Icons.rice_bowl),
-            label: const Text('喂食'),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: controller.toggleSleep,
-            icon: Icon(pet.isSleeping ? Icons.wb_sunny : Icons.bedtime),
-            label: Text(pet.isSleeping ? '唤醒' : '睡觉'),
-          ),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: _FoodInventoryLine(rewardController: rewardController),
         ),
       ],
+    );
+  }
+
+  void _showFoodPicker() {
+    controller.feed();
+    Get.bottomSheet(
+      _FoodPickerSheet(
+        petController: controller,
+        rewardController: rewardController,
+      ),
+      isScrollControlled: true,
+    );
+  }
+}
+
+class _FoodShopItem extends StatelessWidget {
+  final PetFood food;
+  final RewardController rewardController;
+
+  const _FoodShopItem({required this.food, required this.rewardController});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: TaskTheme.primaryColor.withValues(alpha: 0.48),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.restaurant, color: Colors.orange),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  food.name,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '+${food.hungerBoost} 饱腹  +${food.moodBoost} 心情',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 4),
+                Obx(
+                  () => Text(
+                    '拥有 ${rewardController.foodCount(food.name)} 份',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Obx(() {
+            final canBuy = rewardController.points >= food.cost;
+            return ElevatedButton(
+              onPressed: () => _buyFood(canBuy),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                backgroundColor: canBuy ? null : Colors.grey[300],
+                foregroundColor: canBuy ? null : Colors.grey[600],
+              ),
+              child: Text('${food.cost}积分'),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _buyFood(bool canBuy) async {
+    if (!canBuy) {
+      Get.snackbar('积分不足', '再完成一些专注或任务吧', snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
+    final success = await rewardController.buyFood(food);
+    if (!success) {
+      Get.snackbar('积分不足', '再完成一些专注或任务吧', snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
+    Get.snackbar(
+      '已购买',
+      '${food.name} 已放入库存',
+      snackPosition: SnackPosition.BOTTOM,
     );
   }
 }

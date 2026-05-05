@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:todolist/constants/theme.dart';
 import 'package:todolist/model/pet/pet.dart';
@@ -74,7 +78,7 @@ class _MessageBubble extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -116,12 +120,13 @@ class _PetStage extends StatelessWidget {
                 width: 190,
                 height: 18,
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(50),
                 ),
               ),
             ),
             _AnimatedPetSprite(controller: controller, pet: pet),
+            _PetFeedbackOverlay(controller: controller, pet: pet),
           ],
         ),
       ),
@@ -140,63 +145,310 @@ class _AnimatedPetSprite extends StatefulWidget {
 }
 
 class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _animationController;
+    with TickerProviderStateMixin {
+  static const String _spritePath =
+      'lib/assets/images/pet/cat_orange_spritesheet.png';
+  static const int _frameSize = 128;
+  static const int _frameCount = 4;
+  static const Map<PetAction, int> _actionRows = {
+    PetAction.idle: 0,
+    PetAction.pet: 2,
+    PetAction.feed: 3,
+    PetAction.sleep: 4,
+  };
+
+  late final AnimationController _idleController;
+  late final AnimationController _walkController;
+  Timer? _frameTimer;
+  ui.Image? _spriteImage;
+  int _frameIndex = 0;
+  bool _facingLeft = false;
+  PetAction _lastAction = PetAction.idle;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+    _idleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1600),
     )..repeat(reverse: true);
+    _walkController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 5200),
+    )
+      ..addStatusListener(_handleWalkStatus)
+      ..repeat(reverse: true);
+    _loadSprite();
+    _startFrameTimer();
   }
 
   @override
   void didUpdateWidget(covariant _AnimatedPetSprite oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _animationController.duration = widget.pet.isSleeping
+    _idleController.duration = widget.pet.isSleeping
         ? const Duration(milliseconds: 2600)
         : const Duration(milliseconds: 1600);
-    if (!_animationController.isAnimating) {
-      _animationController.repeat(reverse: true);
+    if (!_idleController.isAnimating) {
+      _idleController.repeat(reverse: true);
+    }
+    if (widget.pet.isSleeping) {
+      _walkController.stop();
+    } else if (!_walkController.isAnimating) {
+      _walkController.repeat(reverse: true);
     }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _frameTimer?.cancel();
+    _walkController.removeStatusListener(_handleWalkStatus);
+    _idleController.dispose();
+    _walkController.dispose();
+    _spriteImage?.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadSprite() async {
+    final data = await rootBundle.load(_spritePath);
+    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+    final frame = await codec.getNextFrame();
+    if (!mounted) {
+      frame.image.dispose();
+      return;
+    }
+    setState(() => _spriteImage = frame.image);
+  }
+
+  void _startFrameTimer() {
+    _frameTimer?.cancel();
+    _frameTimer = Timer.periodic(const Duration(milliseconds: 150), (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _frameIndex = (_frameIndex + 1) % _frameCount);
+    });
+  }
+
+  void _handleWalkStatus(AnimationStatus status) {
+    if (status == AnimationStatus.forward && _facingLeft) {
+      setState(() => _facingLeft = false);
+    } else if (status == AnimationStatus.reverse && !_facingLeft) {
+      setState(() => _facingLeft = true);
+    }
+  }
+
+  void _syncFrameAction(PetAction action) {
+    if (_lastAction != action) {
+      _lastAction = action;
+      _frameIndex = 0;
+    }
+  }
+
+  void _syncWalkMotion() {
+    if (widget.pet.isSleeping && _walkController.isAnimating) {
+      _walkController.stop();
+    } else if (!widget.pet.isSleeping && !_walkController.isAnimating) {
+      _walkController.repeat(reverse: true);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       final action = widget.controller.action.value;
-      return AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          final idleLift = widget.pet.isSleeping
-              ? 1.5 * _animationController.value
-              : 7 * _animationController.value;
-          final actionBounce =
-              action == PetAction.pet || action == PetAction.feed ? -12.0 : 0.0;
+      _syncWalkMotion();
+      _syncFrameAction(action);
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          return AnimatedBuilder(
+            animation: Listenable.merge([_idleController, _walkController]),
+            builder: (context, child) {
+              final image = _spriteImage;
+              final idleLift = widget.pet.isSleeping
+                  ? 1.5 * _idleController.value
+                  : 5 * _idleController.value;
+              final actionBounce = action == PetAction.pet ||
+                      action == PetAction.feed
+                  ? -12.0
+                  : 0.0;
+              final walkRange = (constraints.maxWidth - 176)
+                  .clamp(0, 96)
+                  .toDouble();
+              final walkOffset = widget.pet.isSleeping
+                  ? 0.0
+                  : (walkRange * (_walkController.value - 0.5));
+              final row = widget.pet.isSleeping
+                  ? _actionRows[PetAction.sleep]!
+                  : action == PetAction.idle
+                      ? 1
+                      : _actionRows[action] ?? 1;
 
-          return Transform.translate(
-            offset: Offset(0, actionBounce - idleLift),
-            child: CustomPaint(
-              size: const Size(168, 168),
-              painter: _PixelCatPainter(
-                action: action,
-                species: widget.pet.species,
-                animationValue: _animationController.value,
-                isSleeping: widget.pet.isSleeping,
-              ),
-            ),
+              return Transform.translate(
+                offset: Offset(walkOffset, actionBounce - idleLift),
+                child: Transform.scale(
+                  scaleX: _facingLeft ? -1 : 1,
+                  child: image == null
+                      ? const SizedBox(width: 176, height: 176)
+                      : CustomPaint(
+                          size: const Size(176, 176),
+                          painter: _SpriteSheetPainter(
+                            image: image,
+                            row: row,
+                            frame: _frameIndex,
+                            frameSize: _frameSize,
+                          ),
+                        ),
+                ),
+              );
+            },
           );
         },
       );
     });
+  }
+}
+
+class _PetFeedbackOverlay extends StatelessWidget {
+  final PetController controller;
+  final PetModel pet;
+
+  const _PetFeedbackOverlay({required this.controller, required this.pet});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final action = controller.action.value;
+      if (pet.isSleeping) {
+        return const Positioned(
+          top: 48,
+          right: 76,
+          child: _FloatingFeedback(
+            icon: Icons.nights_stay,
+            color: Colors.indigoAccent,
+            label: 'Z',
+          ),
+        );
+      }
+
+      if (action == PetAction.pet) {
+        return const Positioned(
+          top: 58,
+          right: 82,
+          child: _FloatingFeedback(
+            icon: Icons.favorite,
+            color: Colors.pinkAccent,
+          ),
+        );
+      }
+
+      if (action == PetAction.feed) {
+        return const Positioned(
+          bottom: 72,
+          right: 78,
+          child: _FloatingFeedback(
+            icon: Icons.rice_bowl,
+            color: Colors.orange,
+          ),
+        );
+      }
+
+      return const SizedBox.shrink();
+    });
+  }
+}
+
+class _FloatingFeedback extends StatefulWidget {
+  final IconData icon;
+  final Color color;
+  final String? label;
+
+  const _FloatingFeedback({
+    required this.icon,
+    required this.color,
+    this.label,
+  });
+
+  @override
+  State<_FloatingFeedback> createState() => _FloatingFeedbackState();
+}
+
+class _FloatingFeedbackState extends State<_FloatingFeedback>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+  late final Animation<Offset> _offset;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
+    _opacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 20),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 80),
+    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _offset = Tween<Offset>(
+      begin: const Offset(0, 10),
+      end: const Offset(0, -22),
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _scale = Tween<double>(begin: 0.85, end: 1.15).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _opacity.value,
+          child: Transform.translate(
+            offset: _offset.value,
+            child: Transform.scale(
+              scale: _scale.value,
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.86),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: widget.color.withValues(alpha: 0.16),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Center(
+          child: widget.label == null
+              ? Icon(widget.icon, color: widget.color, size: 22)
+              : Text(
+                  widget.label!,
+                  style: TextStyle(
+                    color: widget.color,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+        ),
+      ),
+    );
   }
 }
 
@@ -385,121 +637,38 @@ class _ActionBar extends StatelessWidget {
   }
 }
 
-class _PixelCatPainter extends CustomPainter {
-  final PetAction action;
-  final String species;
-  final double animationValue;
-  final bool isSleeping;
+class _SpriteSheetPainter extends CustomPainter {
+  final ui.Image image;
+  final int row;
+  final int frame;
+  final int frameSize;
 
-  _PixelCatPainter({
-    required this.action,
-    required this.species,
-    required this.animationValue,
-    required this.isSleeping,
+  _SpriteSheetPainter({
+    required this.image,
+    required this.row,
+    required this.frame,
+    required this.frameSize,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (species != PetSpecies.cat) {
-      return;
-    }
-
-    final pixel = size.width / 14;
-    final tailLift = animationValue > 0.5 ? -1 : 0;
-    final blink = !isSleeping && animationValue > 0.82;
-    final body = Paint()..color = const Color.fromARGB(255, 88, 103, 118);
-    final bodyDark = Paint()..color = const Color.fromARGB(255, 58, 68, 78);
-    final face = Paint()..color = const Color.fromARGB(255, 245, 221, 186);
-    final pink = Paint()..color = const Color.fromARGB(255, 246, 150, 169);
-    final eye = Paint()..color = const Color.fromARGB(255, 26, 34, 42);
-    final food = Paint()..color = const Color.fromARGB(255, 238, 156, 75);
-
-    void px(int x, int y, Paint paint, {int w = 1, int h = 1}) {
-      canvas.drawRect(
-        Rect.fromLTWH(x * pixel, y * pixel, w * pixel, h * pixel),
-        paint,
-      );
-    }
-
-    // Tail
-    px(1, 8 + tailLift, bodyDark);
-    px(1, 7 + tailLift, bodyDark);
-    px(2, 6 + tailLift, bodyDark);
-    px(3, 6 + tailLift, bodyDark);
-
-    // Body
-    px(4, 7, body, w: 7, h: 5);
-    px(5, 6, body, w: 5);
-    px(5, 12, bodyDark);
-    px(9, 12, bodyDark);
-
-    // Head and ears
-    px(4, 3, body, w: 7, h: 5);
-    px(4, 2, bodyDark);
-    px(5, 1, bodyDark);
-    px(9, 1, bodyDark);
-    px(10, 2, bodyDark);
-    px(5, 2, pink);
-    px(9, 2, pink);
-
-    // Face
-    px(5, 5, face, w: 5, h: 2);
-    px(6, 4, face, w: 3);
-    if (isSleeping) {
-      px(5, 5, eye, w: 2);
-      px(8, 5, eye, w: 2);
-    } else if (blink) {
-      px(5, 5, eye, w: 2);
-      px(8, 5, eye, w: 2);
-    } else {
-      px(5, 4, eye);
-      px(9, 4, eye);
-      if (action == PetAction.pet) {
-        px(6, 4, pink);
-        px(8, 4, pink);
-      }
-    }
-    px(7, 5, pink);
-    px(6, 6, eye);
-    px(8, 6, eye);
-
-    // Paws
-    px(4, 11, face);
-    px(10, 11, face);
-
-    if (action == PetAction.feed) {
-      px(11, 9, food, w: 2);
-      px(12, 8, food);
-    }
-
-    if (isSleeping) {
-      final zPaint = Paint()
-        ..color = const Color.fromARGB(255, 116, 154, 190)
-        ..strokeWidth = 2
-        ..style = PaintingStyle.stroke;
-      canvas.drawLine(
-        Offset(11.5 * pixel, 2.5 * pixel),
-        Offset(13 * pixel, 2.5 * pixel),
-        zPaint,
-      );
-      canvas.drawLine(
-        Offset(13 * pixel, 2.5 * pixel),
-        Offset(11.5 * pixel, 4 * pixel),
-        zPaint,
-      );
-      canvas.drawLine(
-        Offset(11.5 * pixel, 4 * pixel),
-        Offset(13 * pixel, 4 * pixel),
-        zPaint,
-      );
-    }
+    final src = Rect.fromLTWH(
+      frame * frameSize.toDouble(),
+      row * frameSize.toDouble(),
+      frameSize.toDouble(),
+      frameSize.toDouble(),
+    );
+    final paint = Paint()
+      ..filterQuality = FilterQuality.none
+      ..isAntiAlias = false;
+    canvas.drawImageRect(image, src, Offset.zero & size, paint);
   }
 
   @override
-  bool shouldRepaint(covariant _PixelCatPainter oldDelegate) {
-    return oldDelegate.action != action ||
-        oldDelegate.species != species ||
-        oldDelegate.animationValue != animationValue ||
-        oldDelegate.isSleeping != isSleeping;
+  bool shouldRepaint(covariant _SpriteSheetPainter oldDelegate) {
+    return oldDelegate.image != image ||
+        oldDelegate.row != row ||
+        oldDelegate.frame != frame ||
+        oldDelegate.frameSize != frameSize;
   }
 }

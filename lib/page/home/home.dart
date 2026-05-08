@@ -304,29 +304,41 @@ class _PetSettingsSection extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Obx(() {
-          final species = petController.pet.value?.species ?? PetSpecies.cat;
-          return Row(
+          final pet = petController.pet.value;
+          final species = pet?.species ?? PetSpecies.cat;
+          return Column(
             children: [
-              Expanded(
-                child: _PetOptionCard(
-                  title: '像素小猫',
-                  subtitle: '当前伙伴',
-                  icon: Icons.pets,
-                  selected: species == PetSpecies.cat,
-                  enabled: true,
-                  onTap: () => petController.selectPetSpecies(PetSpecies.cat),
-                ),
+              _PetNameEditor(
+                name: pet?.name ?? '小云',
+                onEdit: () => _showPetNameDialog(petController, pet?.name),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _PetOptionCard(
-                  title: '像素小狗',
-                  subtitle: '可选择',
-                  icon: Icons.cruelty_free,
-                  selected: species == PetSpecies.dog,
-                  enabled: true,
-                  onTap: () => petController.selectPetSpecies(PetSpecies.dog),
-                ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _PetOptionCard(
+                      title: '像素小猫',
+                      subtitle: species == PetSpecies.cat ? '当前伙伴' : '可选择',
+                      icon: Icons.pets,
+                      selected: species == PetSpecies.cat,
+                      enabled: true,
+                      onTap: () =>
+                          petController.selectPetSpecies(PetSpecies.cat),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _PetOptionCard(
+                      title: '像素小狗',
+                      subtitle: species == PetSpecies.dog ? '当前伙伴' : '可选择',
+                      icon: Icons.cruelty_free,
+                      selected: species == PetSpecies.dog,
+                      enabled: true,
+                      onTap: () =>
+                          petController.selectPetSpecies(PetSpecies.dog),
+                    ),
+                  ),
+                ],
               ),
             ],
           );
@@ -334,6 +346,99 @@ class _PetSettingsSection extends StatelessWidget {
       ],
     );
   }
+}
+
+class _PetNameEditor extends StatelessWidget {
+  final String name;
+  final VoidCallback onEdit;
+
+  const _PetNameEditor({required this.name, required this.onEdit});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: TaskTheme.primaryColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.badge_outlined, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '宠物名字：$name',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          TextButton.icon(
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit, size: 16),
+            label: const Text('修改'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+void _showPetNameDialog(PetController petController, String? currentName) {
+  final nameController = TextEditingController(text: currentName ?? '');
+  Get.dialog(
+    AlertDialog(
+      title: const Text('修改宠物名字'),
+      content: TextField(
+        controller: nameController,
+        autofocus: true,
+        maxLength: 8,
+        decoration: const InputDecoration(
+          labelText: '宠物名字',
+          hintText: '最多 8 个字符',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Get.back(), child: const Text('取消')),
+        ElevatedButton(
+          onPressed: () async {
+            final name = nameController.text.trim();
+            if (name.isEmpty) {
+              Get.snackbar(
+                '名字不能为空',
+                '给宠物取一个简短的名字吧',
+                snackPosition: SnackPosition.BOTTOM,
+              );
+              return;
+            }
+            if (name.length > 8) {
+              Get.snackbar(
+                '名字太长',
+                '宠物名字最多 8 个字符',
+                snackPosition: SnackPosition.BOTTOM,
+              );
+              return;
+            }
+            final success = await petController.renamePet(name);
+            if (!success) {
+              Get.snackbar(
+                '修改失败',
+                '请检查名字后再试',
+                snackPosition: SnackPosition.BOTTOM,
+              );
+              return;
+            }
+            Get.back();
+          },
+          child: const Text('保存'),
+        ),
+      ],
+    ),
+  ).whenComplete(nameController.dispose);
 }
 
 class _PetOptionCard extends StatelessWidget {

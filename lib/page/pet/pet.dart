@@ -722,23 +722,27 @@ class _RewardShopPanelState extends State<_RewardShopPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(8),
-            onTap: () => setState(() => _expanded = !_expanded),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Obx(
-                () => Row(
+    return Obx(() {
+      final species = widget.petController.pet.value?.species ?? PetSpecies.cat;
+      final foods = PetController.foodsForSpecies(species);
+      final shopTitle = '${PetController.speciesLabel(species)}食物';
+
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
                   children: [
                     const Icon(Icons.stars, color: Colors.amber),
                     const SizedBox(width: 8),
@@ -751,12 +755,24 @@ class _RewardShopPanelState extends State<_RewardShopPanel> {
                         ),
                       ),
                     ),
-                    const Text(
-                      '宠物商城',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text(
+                          '宠物商城',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          shopTitle,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(width: 4),
                     Icon(
@@ -768,46 +784,47 @@ class _RewardShopPanelState extends State<_RewardShopPanel> {
                 ),
               ),
             ),
-          ),
-          AnimatedCrossFade(
-            firstChild: const SizedBox.shrink(),
-            secondChild: Column(
-              children: [
-                const SizedBox(height: 12),
-                ...PetController.shopFoods.map(
-                  (food) => _FoodShopItem(
-                    food: food,
-                    rewardController: widget.rewardController,
+            AnimatedCrossFade(
+              firstChild: const SizedBox.shrink(),
+              secondChild: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  ...foods.map(
+                    (food) => _FoodShopItem(
+                      food: food,
+                      rewardController: widget.rewardController,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
+              crossFadeState: _expanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 180),
             ),
-            crossFadeState: _expanded
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 180),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    });
   }
 }
 
 class _FoodInventoryLine extends StatelessWidget {
   final RewardController rewardController;
+  final PetModel pet;
 
-  const _FoodInventoryLine({required this.rewardController});
+  const _FoodInventoryLine({required this.rewardController, required this.pet});
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final ownedFoods = PetController.shopFoods
-          .where((food) => rewardController.foodCount(food.name) > 0)
-          .toList();
+      final ownedFoods = PetController.foodsForSpecies(
+        pet.species,
+      ).where((food) => rewardController.foodCount(food.name) > 0).toList();
       if (ownedFoods.isEmpty) {
-        return const Text(
-          '库存：暂无食物',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
+        return Text(
+          '库存：暂无适合${PetController.speciesLabel(pet.species)}的食物',
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
         );
       }
 
@@ -852,9 +869,10 @@ class _FoodPickerSheet extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Obx(() {
-        final ownedFoods = PetController.shopFoods
-            .where((food) => rewardController.foodCount(food.name) > 0)
-            .toList();
+        final species = petController.pet.value?.species ?? PetSpecies.cat;
+        final ownedFoods = PetController.foodsForSpecies(
+          species,
+        ).where((food) => rewardController.foodCount(food.name) > 0).toList();
 
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -870,7 +888,7 @@ class _FoodPickerSheet extends StatelessWidget {
                 padding: EdgeInsets.symmetric(vertical: 18),
                 child: Center(
                   child: Text(
-                    '还没有食物，先去商城兑换吧',
+                    '还没有适合当前宠物的食物，先去商城兑换吧',
                     style: TextStyle(color: Colors.grey),
                   ),
                 ),
@@ -950,7 +968,10 @@ class _ActionBar extends StatelessWidget {
         const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerLeft,
-          child: _FoodInventoryLine(rewardController: rewardController),
+          child: _FoodInventoryLine(
+            rewardController: rewardController,
+            pet: pet,
+          ),
         ),
       ],
     );

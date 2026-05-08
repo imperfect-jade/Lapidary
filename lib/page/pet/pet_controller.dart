@@ -7,12 +7,14 @@ import 'package:todolist/model/pet/pet.dart';
 enum PetAction { idle, pet, feed, sleep }
 
 class PetFood {
+  final String species;
   final String name;
   final int cost;
   final int hungerBoost;
   final int moodBoost;
 
   const PetFood({
+    required this.species,
     required this.name,
     required this.cost,
     required this.hungerBoost,
@@ -22,10 +24,57 @@ class PetFood {
 
 class PetController extends GetxController {
   static const List<PetFood> shopFoods = [
-    PetFood(name: '小鱼干', cost: 20, hungerBoost: 12, moodBoost: 4),
-    PetFood(name: '猫罐头', cost: 45, hungerBoost: 28, moodBoost: 10),
-    PetFood(name: '豪华猫饭', cost: 80, hungerBoost: 45, moodBoost: 18),
+    PetFood(
+      species: PetSpecies.cat,
+      name: '小鱼干',
+      cost: 20,
+      hungerBoost: 12,
+      moodBoost: 4,
+    ),
+    PetFood(
+      species: PetSpecies.cat,
+      name: '猫罐头',
+      cost: 45,
+      hungerBoost: 28,
+      moodBoost: 10,
+    ),
+    PetFood(
+      species: PetSpecies.cat,
+      name: '豪华猫饭',
+      cost: 80,
+      hungerBoost: 45,
+      moodBoost: 18,
+    ),
+    PetFood(
+      species: PetSpecies.dog,
+      name: '小骨饼干',
+      cost: 20,
+      hungerBoost: 12,
+      moodBoost: 4,
+    ),
+    PetFood(
+      species: PetSpecies.dog,
+      name: '鸡肉狗粮',
+      cost: 45,
+      hungerBoost: 28,
+      moodBoost: 10,
+    ),
+    PetFood(
+      species: PetSpecies.dog,
+      name: '牛肉能量餐',
+      cost: 80,
+      hungerBoost: 45,
+      moodBoost: 18,
+    ),
   ];
+
+  static List<PetFood> foodsForSpecies(String species) {
+    return shopFoods.where((food) => food.species == species).toList();
+  }
+
+  static String speciesLabel(String species) {
+    return species == PetSpecies.dog ? '小狗' : '小猫';
+  }
 
   final Rxn<PetModel> pet = Rxn<PetModel>();
   final message = '今天也一起慢慢完成任务吧'.obs;
@@ -125,7 +174,9 @@ class PetController extends GetxController {
   }
 
   Future<void> feed() async {
-    _showTemporaryMessage('请选择已购买的食物来喂小猫');
+    final currentPet = pet.value;
+    final species = currentPet?.species ?? PetSpecies.cat;
+    _showTemporaryMessage('请选择已购买的${speciesLabel(species)}食物来喂食');
   }
 
   Future<void> feedWithFood(PetFood food) async {
@@ -155,8 +206,22 @@ class PetController extends GetxController {
 
     currentPet.species = species;
     currentPet.lastInteractionAt = DateTime.now();
-    _showTemporaryMessage('已经切换宠物');
+    _showTemporaryMessage('已经切换为${speciesLabel(species)}');
     await _saveAndNotify();
+  }
+
+  Future<bool> renamePet(String name) async {
+    final currentPet = pet.value;
+    final trimmed = name.trim();
+    if (currentPet == null || trimmed.isEmpty || trimmed.length > 8) {
+      return false;
+    }
+
+    currentPet.name = trimmed;
+    currentPet.lastInteractionAt = DateTime.now();
+    _showTemporaryMessage('现在叫我$trimmed吧');
+    await _saveAndNotify();
+    return true;
   }
 
   Future<void> toggleSleep() async {

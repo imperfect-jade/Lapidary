@@ -1,0 +1,14 @@
+﻿{
+  "image": "dog_spritesheet.png",
+  "frameWidth": 128,
+  "frameHeight": 128,
+  "columns": 4,
+  "rows": 5,
+  "actions": {
+    "idle": { "row": 0, "frames": 4, "fps": 6 },
+    "walk": { "row": 1, "frames": 4, "fps": 7 },
+    "pet": { "row": 2, "frames": 4, "fps": 7 },
+    "feed": { "row": 3, "frames": 4, "fps": 7 },
+    "sleep": { "row": 4, "frames": 4, "fps": 4 }
+  }
+}

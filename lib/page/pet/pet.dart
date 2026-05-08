@@ -32,7 +32,7 @@ class _PetPageState extends State<PetPage> {
     return Scaffold(
       backgroundColor: TaskTheme.primaryColor,
       appBar: AppBar(
-        title: const Text('像素小猫'),
+        title: const Text('像素宠物'),
         centerTitle: true,
         backgroundColor: TaskTheme.appBarColor,
         foregroundColor: Colors.black,
@@ -157,8 +157,6 @@ class _AnimatedPetSprite extends StatefulWidget {
 
 class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
     with TickerProviderStateMixin {
-  static const String _spritePath =
-      'lib/assets/images/pet/cat_orange_spritesheet.png';
   static const int _frameSize = 128;
   static const int _frameCount = 4;
   static const Map<PetAction, int> _actionRows = {
@@ -176,6 +174,7 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
   int _frameIndex = 0;
   bool _facingLeft = false;
   PetAction _lastAction = PetAction.idle;
+  String? _loadedSpecies;
 
   @override
   void initState() {
@@ -198,6 +197,9 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
   @override
   void didUpdateWidget(covariant _AnimatedPetSprite oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.pet.species != widget.pet.species) {
+      _loadSprite();
+    }
     _idleController.duration = widget.pet.isSleeping
         ? const Duration(milliseconds: 2600)
         : const Duration(milliseconds: 1600);
@@ -222,17 +224,22 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
   }
 
   Future<void> _loadSprite() async {
+    final species = widget.pet.species;
+    final spritePath = _spritePathForSpecies(species);
     try {
-      final data = await rootBundle.load(_spritePath);
+      final data = await rootBundle.load(spritePath);
       final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
       final frame = await codec.getNextFrame();
       if (!mounted) {
         frame.image.dispose();
         return;
       }
+      _spriteImage?.dispose();
       setState(() {
         _spriteImage = frame.image;
         _spriteLoadFailed = false;
+        _loadedSpecies = species;
+        _frameIndex = 0;
       });
     } catch (error) {
       debugPrint('Failed to load pet sprite: $error');
@@ -240,6 +247,13 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
         setState(() => _spriteLoadFailed = true);
       }
     }
+  }
+
+  String _spritePathForSpecies(String species) {
+    if (species == PetSpecies.dog) {
+      return 'lib/assets/images/pet/dog_spritesheet.png';
+    }
+    return 'lib/assets/images/pet/cat_orange_spritesheet.png';
   }
 
   void _startFrameTimer() {
@@ -279,6 +293,9 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
   Widget build(BuildContext context) {
     return Obx(() {
       final action = widget.controller.action.value;
+      if (_loadedSpecies != widget.pet.species && !_spriteLoadFailed) {
+        _loadSprite();
+      }
       _syncWalkMotion();
       _syncFrameAction(action);
       return LayoutBuilder(
@@ -343,7 +360,7 @@ class _SpriteLoadPlaceholder extends StatelessWidget {
       height: 176,
       child: failed
           ? const Center(
-              child: Text('小猫加载中断', style: TextStyle(color: Colors.grey)),
+              child: Text('宠物加载中断', style: TextStyle(color: Colors.grey)),
             )
           : const SizedBox.shrink(),
     );
@@ -589,7 +606,7 @@ class _GrowthPanel extends StatelessWidget {
               value: controller.expProgress,
               minHeight: 10,
               backgroundColor: Colors.grey[200],
-              valueColor: const AlwaysStoppedAnimation(TaskTheme.appBarColor),
+              valueColor: AlwaysStoppedAnimation(TaskTheme.appBarColor),
             ),
           ),
           const SizedBox(height: 8),

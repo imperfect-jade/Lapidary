@@ -4,6 +4,7 @@ part 'pet.g.dart';
 
 class PetSpecies {
   static const String cat = 'cat';
+  static const String dog = 'dog';
 }
 
 @HiveType(typeId: 2)

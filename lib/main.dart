@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:todolist/constants/theme.dart';
 import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
 import 'package:todolist/model/reward/reward_wallet.dart';
@@ -27,7 +28,9 @@ void main(List<String> args) async {
   await Hive.openBox<PomodoroModel>('pomodoros');
   await Hive.openBox<PetModel>('pets');
   await Hive.openBox<RewardWalletModel>('reward_wallet');
+  await Hive.openBox(ThemeController.settingsBoxName);
   // 注册Controller
+  Get.put(ThemeController());
   Get.put(RewardController());
   Get.put(TaskController());
   Get.put(PomodoroController());

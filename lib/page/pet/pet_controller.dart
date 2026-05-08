@@ -147,6 +147,18 @@ class PetController extends GetxController {
     _resetActionLater();
   }
 
+  Future<void> selectPetSpecies(String species) async {
+    final currentPet = pet.value;
+    if (currentPet == null || currentPet.species == species) {
+      return;
+    }
+
+    currentPet.species = species;
+    currentPet.lastInteractionAt = DateTime.now();
+    _showTemporaryMessage('已经切换宠物');
+    await _saveAndNotify();
+  }
+
   Future<void> toggleSleep() async {
     final currentPet = pet.value;
     if (currentPet == null) {

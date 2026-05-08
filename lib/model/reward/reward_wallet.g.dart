@@ -21,8 +21,7 @@ class RewardWalletModelAdapter extends TypeAdapter<RewardWalletModel> {
       rewardedPomodoroIds: (fields[1] as List).cast<String>(),
       rewardedTaskIds: (fields[2] as List).cast<String>(),
       taskFocusSeconds: (fields[3] as Map).cast<String, int>(),
-      foodInventory:
-          (fields[4] as Map?)?.cast<String, int>() ?? <String, int>{},
+      foodInventory: (fields[4] as Map).cast<String, int>(),
     );
   }
 

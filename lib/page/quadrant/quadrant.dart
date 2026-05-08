@@ -122,9 +122,9 @@ class QuadrantPage extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: config.color.withOpacity(0.05),
+        color: config.color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: config.color.withOpacity(0.3)),
+        border: Border.all(color: config.color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -132,7 +132,7 @@ class QuadrantPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             decoration: BoxDecoration(
-              color: config.color.withOpacity(0.15),
+              color: config.color.withValues(alpha: 0.15),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(12),
               ),
@@ -157,7 +157,7 @@ class QuadrantPage extends StatelessWidget {
                         config.subtitle,
                         style: TextStyle(
                           fontSize: 10,
-                          color: config.color.withOpacity(0.7),
+                          color: config.color.withValues(alpha: 0.7),
                         ),
                       ),
                     ],
@@ -221,7 +221,7 @@ class QuadrantPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(6),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 2,
               offset: const Offset(0, 1),
             ),
@@ -256,9 +256,9 @@ class QuadrantPage extends StatelessWidget {
                 ),
               ),
             ),
-            // 截止日期
+            // 截止时间
             Text(
-              _formatDate(task.deadline),
+              _formatDateTime(task.deadline),
               style: TextStyle(fontSize: 10, color: Colors.grey[500]),
             ),
           ],
@@ -320,7 +320,7 @@ class QuadrantPage extends StatelessWidget {
               children: [
                 const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
-                Text('截止：${_formatDate(task.deadline)}'),
+                Text('截止：${_formatDateTime(task.deadline)}'),
               ],
             ),
 
@@ -341,7 +341,9 @@ class QuadrantPage extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.month}/${date.day}';
+  String _formatDateTime(DateTime date) {
+    return '${date.month}/${date.day} ${_two(date.hour)}:${_two(date.minute)}';
   }
+
+  String _two(int value) => value.toString().padLeft(2, '0');
 }

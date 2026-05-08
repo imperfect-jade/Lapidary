@@ -24,13 +24,16 @@ class TaskModelAdapter extends TypeAdapter<TaskModel> {
       createdAt: fields[3] as DateTime?,
       priority: fields[5] as int,
       description: fields[6] as String?,
+      taskType: fields[7] == null ? 'day' : fields[7] as String,
+      focusTargetPeriod: fields[8] == null ? 'daily' : fields[8] as String,
+      focusTargetMinutes: fields[9] == null ? 0 : fields[9] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, TaskModel obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -44,7 +47,13 @@ class TaskModelAdapter extends TypeAdapter<TaskModel> {
       ..writeByte(5)
       ..write(obj.priority)
       ..writeByte(6)
-      ..write(obj.description);
+      ..write(obj.description)
+      ..writeByte(7)
+      ..write(obj.taskType)
+      ..writeByte(8)
+      ..write(obj.focusTargetPeriod)
+      ..writeByte(9)
+      ..write(obj.focusTargetMinutes);
   }
 
   @override

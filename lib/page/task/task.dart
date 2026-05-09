@@ -103,8 +103,15 @@ class TaskPage extends StatelessWidget {
     Get.dialog(
       AlertDialog(
         title: const Text('添加任务'),
-        content: SizedBox(
-          width: 420,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+        titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+        contentPadding: const EdgeInsets.fromLTRB(18, 8, 18, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 380,
+            maxHeight: Get.height * 0.68,
+          ),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -114,29 +121,31 @@ class TaskPage extends StatelessWidget {
                   decoration: const InputDecoration(
                     labelText: '任务标题',
                     border: OutlineInputBorder(),
+                    isDense: true,
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 TextField(
                   controller: descriptionController,
                   decoration: const InputDecoration(
                     labelText: '任务描述',
                     border: OutlineInputBorder(),
+                    isDense: true,
                   ),
-                  maxLines: 3,
+                  maxLines: 2,
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 _PrioritySelector(selectedPriority: selectedPriority),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 _TaskTypeSelector(selectedType: selectedType),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 _DeadlineSelector(selectedDeadline: selectedDeadline),
                 Obx(() {
                   if (selectedType.value == TaskType.day) {
                     return const SizedBox.shrink();
                   }
                   return Padding(
-                    padding: const EdgeInsets.only(top: 14),
+                    padding: const EdgeInsets.only(top: 10),
                     child: _FocusTargetSelector(
                       selectedPeriod: selectedFocusPeriod,
                       minutesController: focusTargetController,
@@ -609,10 +618,10 @@ class _TaskTypeFilter extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 2),
       child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
+        spacing: 6,
+        runSpacing: 6,
         children: filters.entries.map((entry) {
           final selected = selectedType == entry.key;
           return ChoiceChip(
@@ -621,7 +630,11 @@ class _TaskTypeFilter extends StatelessWidget {
             onSelected: (_) => onSelected(entry.key),
             selectedColor: TaskTheme.appBarColor,
             backgroundColor: Colors.white.withValues(alpha: 0.76),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             labelStyle: TextStyle(
+              fontSize: 12,
               color: selected ? Colors.black : Colors.grey[700],
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
             ),

@@ -20,6 +20,7 @@ Widget getRouteWidget() {
           backgroundColor: palette.appBarColor,
           foregroundColor: Colors.black,
           centerTitle: true,
+          systemOverlayStyle: themeController.systemUiOverlayStyle,
         ),
       ),
       //命名路由

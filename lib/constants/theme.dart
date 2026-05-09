@@ -1,5 +1,6 @@
 // 主题颜色配置 - 预留设置主题颜色功能
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 
@@ -73,6 +74,7 @@ class ThemeController extends GetxController {
         palettes.any((palette) => palette.key == savedThemeKey)) {
       currentThemeKey.value = savedThemeKey;
     }
+    applySystemUiOverlayStyle();
   }
 
   AppThemePalette get currentPalette {
@@ -87,7 +89,33 @@ class ThemeController extends GetxController {
       return;
     }
     currentThemeKey.value = key;
+    applySystemUiOverlayStyle();
     await settingsBox.put(themeKey, key);
+  }
+
+  SystemUiOverlayStyle get systemUiOverlayStyle {
+    final palette = currentPalette;
+    final appBarBrightness = ThemeData.estimateBrightnessForColor(
+      palette.appBarColor,
+    );
+    final useLightIcons = appBarBrightness == Brightness.dark;
+    return SystemUiOverlayStyle(
+      statusBarColor: palette.appBarColor,
+      statusBarIconBrightness: useLightIcons
+          ? Brightness.light
+          : Brightness.dark,
+      statusBarBrightness: useLightIcons ? Brightness.dark : Brightness.light,
+      systemNavigationBarColor: palette.primaryColor,
+      systemNavigationBarIconBrightness: ThemeData.estimateBrightnessForColor(
+        palette.primaryColor,
+      ) == Brightness.dark
+          ? Brightness.light
+          : Brightness.dark,
+    );
+  }
+
+  void applySystemUiOverlayStyle() {
+    SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
   }
 }
 

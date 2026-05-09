@@ -64,15 +64,25 @@ class HomePage extends StatelessWidget {
                   );
                 }),
                 Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Material(
-                    color: Colors.white.withValues(alpha: 0.82),
-                    borderRadius: BorderRadius.circular(8),
-                    child: IconButton(
-                      icon: const Icon(Icons.menu),
-                      onPressed: () => Scaffold.of(context).openDrawer(),
-                      tooltip: '侧边栏',
+                  top: 10,
+                  left: 10,
+                  child: SizedBox(
+                    width: 36,
+                    height: 36,
+                    child: Material(
+                      color: Colors.white.withValues(alpha: 0.82),
+                      borderRadius: BorderRadius.circular(8),
+                      child: IconButton(
+                        icon: const Icon(Icons.menu),
+                        iconSize: 20,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                          width: 36,
+                          height: 36,
+                        ),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                        tooltip: '侧边栏',
+                      ),
                     ),
                   ),
                 ),
@@ -331,7 +341,7 @@ class _PetSettingsSection extends StatelessWidget {
                     child: _PetOptionCard(
                       title: '像素小狗',
                       subtitle: species == PetSpecies.dog ? '当前伙伴' : '可选择',
-                      icon: Icons.cruelty_free,
+                      icon: Icons.pets,
                       selected: species == PetSpecies.dog,
                       enabled: true,
                       onTap: () =>

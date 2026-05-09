@@ -1,0 +1,57 @@
+{
+  "id": "husky",
+  "displayName": "Husky",
+  "description": "A Codex-style gray and white pixel husky companion generated with hatch-pet.",
+  "image": "dog_hatch_spritesheet.webp",
+  "frameWidth": 192,
+  "frameHeight": 208,
+  "columns": 8,
+  "rows": 9,
+  "actions": {
+    "idle": {
+      "row": 0,
+      "frames": 6,
+      "fps": 6
+    },
+    "runningRight": {
+      "row": 1,
+      "frames": 8,
+      "fps": 8
+    },
+    "runningLeft": {
+      "row": 2,
+      "frames": 8,
+      "fps": 8
+    },
+    "pet": {
+      "row": 3,
+      "frames": 4,
+      "fps": 7
+    },
+    "feed": {
+      "row": 8,
+      "frames": 6,
+      "fps": 6
+    },
+    "sleep": {
+      "row": 5,
+      "frames": 8,
+      "fps": 4
+    },
+    "jumping": {
+      "row": 4,
+      "frames": 5,
+      "fps": 7
+    },
+    "waiting": {
+      "row": 6,
+      "frames": 6,
+      "fps": 5
+    },
+    "running": {
+      "row": 7,
+      "frames": 6,
+      "fps": 8
+    }
+  }
+}

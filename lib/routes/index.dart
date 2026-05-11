@@ -10,6 +10,7 @@ Widget getRouteWidget() {
     final palette = themeController.currentPalette;
     return GetMaterialApp(
       theme: ThemeData(
+        fontFamily: 'HarmonyOSSansSC',
         scaffoldBackgroundColor: palette.primaryColor,
         primaryColor: palette.appBarColor,
         colorScheme: ColorScheme.fromSeed(

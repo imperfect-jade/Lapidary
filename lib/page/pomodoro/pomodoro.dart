@@ -412,11 +412,21 @@ class _MotivationQuoteTickerState extends State<_MotivationQuoteTicker> {
         color: Colors.white.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: TaskTheme.selectedColor.withValues(alpha: 0.18),
+          color: const Color.fromARGB(
+            255,
+            238,
+            181,
+            105,
+          ).withValues(alpha: 0.42),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: const Color.fromARGB(
+              255,
+              197,
+              122,
+              46,
+            ).withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),
@@ -428,7 +438,7 @@ class _MotivationQuoteTickerState extends State<_MotivationQuoteTicker> {
             width: 4,
             height: 42,
             decoration: BoxDecoration(
-              color: TaskTheme.selectedColor,
+              color: const Color.fromARGB(255, 225, 143, 63),
               borderRadius: BorderRadius.circular(999),
             ),
           ),
@@ -456,14 +466,15 @@ class _MotivationQuoteTickerState extends State<_MotivationQuoteTicker> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color.fromARGB(255, 42, 58, 72),
-                    fontSize: 17,
-                    height: 1.28,
+                    fontFamily: 'MaShanZheng',
+                    color: Color.fromARGB(255, 197, 113, 43),
+                    fontSize: 20,
+                    height: 1.20,
                     letterSpacing: 0.3,
                     fontWeight: FontWeight.w800,
                     shadows: [
                       Shadow(
-                        color: Color.fromARGB(28, 0, 0, 0),
+                        color: Color.fromARGB(34, 124, 73, 24),
                         blurRadius: 4,
                         offset: Offset(0, 1),
                       ),

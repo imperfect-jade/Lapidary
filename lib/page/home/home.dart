@@ -22,9 +22,9 @@ class HomePage extends StatelessWidget {
     return [
       TaskPage(),
       PomodoroPage(),
+      PetPage(),
       QuadrantPage(),
       CalendarPage(),
-      PetPage(),
     ];
   }
 
@@ -132,7 +132,7 @@ class _AppDrawer extends StatelessWidget {
               leading: const Icon(Icons.home_outlined),
               title: const Text('首页'),
               onTap: () {
-                homeController.changeTab(0);
+                homeController.changeTab(2);
                 Get.back();
               },
             ),

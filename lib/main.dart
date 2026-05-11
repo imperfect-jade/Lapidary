@@ -74,6 +74,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
     }
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(fontFamily: 'HarmonyOSSansSC'),
       home: SplashPage(
         isLoading: _loading,
         errorMessage: _error?.toString(),

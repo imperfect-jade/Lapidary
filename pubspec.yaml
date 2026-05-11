@@ -72,6 +72,16 @@ flutter:
     - lib/assets/images/pet/
     - lib/assets/text/
 
+  fonts:
+    - family: HarmonyOSSansSC
+      fonts:
+        - asset: lib/assets/fonts/HarmonyOS_Sans_SC_Medium.ttf
+          weight: 500
+    - family: MaShanZheng
+      fonts:
+        - asset: lib/assets/fonts/MaShanZheng-Regular.ttf
+          weight: 400
+
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

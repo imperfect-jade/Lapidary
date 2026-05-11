@@ -11,7 +11,7 @@ import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
 import 'package:todolist/page/pet/reward_controller.dart';
 
-//宠物页面
+// 像素宠物页面
 class PetPage extends StatefulWidget {
   const PetPage({super.key});
 
@@ -31,47 +31,65 @@ class _PetPageState extends State<PetPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: TaskTheme.primaryColor,
-      appBar: AppBar(
-        title: const Text('像素宠物'),
-        centerTitle: true,
-        backgroundColor: TaskTheme.appBarColor,
-        foregroundColor: Colors.black,
-        elevation: 0,
+    final baseTheme = Theme.of(context);
+    final petTheme = baseTheme.copyWith(
+      textTheme: baseTheme.textTheme.apply(fontFamily: 'HarmonyOSSansSC'),
+      primaryTextTheme: baseTheme.primaryTextTheme.apply(
+        fontFamily: 'HarmonyOSSansSC',
       ),
-      body: Obx(() {
-        final pet = controller.pet.value;
-        if (pet == null) {
-          return const Center(child: CircularProgressIndicator());
-        }
+      appBarTheme: baseTheme.appBarTheme.copyWith(
+        titleTextStyle: baseTheme.textTheme.titleLarge?.copyWith(
+          fontFamily: 'HarmonyOSSansSC',
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          color: Colors.black,
+        ),
+      ),
+    );
+    return Theme(
+      data: petTheme,
+      child: Scaffold(
+        backgroundColor: TaskTheme.primaryColor,
+        appBar: AppBar(
+          title: const Text('像素宠物'),
+          centerTitle: true,
+          backgroundColor: TaskTheme.appBarColor,
+          foregroundColor: Colors.black,
+          elevation: 0,
+        ),
+        body: Obx(() {
+          final pet = controller.pet.value;
+          if (pet == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              _MessageBubble(message: controller.message.value),
-              const SizedBox(height: 18),
-              _PetStage(controller: controller, pet: pet),
-              const SizedBox(height: 18),
-              _GrowthPanel(controller: controller, pet: pet),
-              const SizedBox(height: 14),
-              _StatusGrid(pet: pet),
-              const SizedBox(height: 14),
-              _ActionBar(
-                controller: controller,
-                pet: pet,
-                rewardController: rewardController,
-              ),
-              const SizedBox(height: 14),
-              _RewardShopPanel(
-                petController: controller,
-                rewardController: rewardController,
-              ),
-            ],
-          ),
-        );
-      }),
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                _MessageBubble(message: controller.message.value),
+                const SizedBox(height: 18),
+                _PetStage(controller: controller, pet: pet),
+                const SizedBox(height: 18),
+                _GrowthPanel(controller: controller, pet: pet),
+                const SizedBox(height: 14),
+                _StatusGrid(pet: pet),
+                const SizedBox(height: 14),
+                _ActionBar(
+                  controller: controller,
+                  pet: pet,
+                  rewardController: rewardController,
+                ),
+                const SizedBox(height: 14),
+                _RewardShopPanel(
+                  petController: controller,
+                  rewardController: rewardController,
+                ),
+              ],
+            ),
+          );
+        }),
+      ),
     );
   }
 }
@@ -1345,7 +1363,7 @@ class _FoodPickerSheet extends StatelessWidget {
                   leading: const Icon(Icons.restaurant, color: Colors.orange),
                   title: Text(food.name),
                   subtitle: Text(
-                    '拥有 ${rewardController.foodCount(food.name)} 份  ·  +${food.hungerBoost} 饱腹  +${food.moodBoost} 心情',
+                    '拥有 ${rewardController.foodCount(food.name)} 份 · +${food.hungerBoost} 饱腹  +${food.moodBoost} 心情',
                   ),
                   onTap: () => _useFood(food),
                 ),

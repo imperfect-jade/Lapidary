@@ -19,6 +19,8 @@ void _showSettingsSheet() {
             ),
             SizedBox(height: 18),
             _ThemeSettingsSection(),
+            SizedBox(height: 18),
+            _FontSettingsSection(),
             SizedBox(height: 8),
           ],
         ),

@@ -22,9 +22,26 @@ class AppThemePalette {
   });
 }
 
+class AppFontOption {
+  final String key;
+  final String label;
+  final String fontFamily;
+  final String description;
+
+  const AppFontOption({
+    required this.key,
+    required this.label,
+    required this.fontFamily,
+    required this.description,
+  });
+}
+
 class ThemeController extends GetxController {
   static const String settingsBoxName = 'settings';
   static const String themeKey = 'theme_key';
+  static const String bodyFontKey = 'body_font_key';
+  static const String defaultBodyFontKey = 'maokengwangxing_yuan';
+  static const String defaultBodyFontFamily = 'MaoKenWangXingYuan';
 
   static const List<AppThemePalette> palettes = [
     AppThemePalette(
@@ -61,7 +78,23 @@ class ThemeController extends GetxController {
     ),
   ];
 
+  static const List<AppFontOption> fontOptions = [
+    AppFontOption(
+      key: 'harmony',
+      label: '鸿蒙字体',
+      fontFamily: 'HarmonyOSSansSC',
+      description: '清晰稳重，适合长时间阅读',
+    ),
+    AppFontOption(
+      key: defaultBodyFontKey,
+      label: '猫啃忘形圆',
+      fontFamily: defaultBodyFontFamily,
+      description: '圆润醒目，适合轻松温馨的界面',
+    ),
+  ];
+
   final currentThemeKey = 'blue'.obs;
+  final currentFontKey = defaultBodyFontKey.obs;
 
   late Box settingsBox;
 
@@ -73,6 +106,11 @@ class ThemeController extends GetxController {
     if (savedThemeKey != null &&
         palettes.any((palette) => palette.key == savedThemeKey)) {
       currentThemeKey.value = savedThemeKey;
+    }
+    final savedFontKey = settingsBox.get(bodyFontKey) as String?;
+    if (savedFontKey != null &&
+        fontOptions.any((option) => option.key == savedFontKey)) {
+      currentFontKey.value = savedFontKey;
     }
     applySystemUiOverlayStyle();
   }
@@ -93,6 +131,23 @@ class ThemeController extends GetxController {
     await settingsBox.put(themeKey, key);
   }
 
+  AppFontOption get currentFont {
+    return fontOptions.firstWhere(
+      (option) => option.key == currentFontKey.value,
+      orElse: () => fontOptions[1],
+    );
+  }
+
+  String get currentBodyFontFamily => currentFont.fontFamily;
+
+  Future<void> changeBodyFont(String key) async {
+    if (!fontOptions.any((option) => option.key == key)) {
+      return;
+    }
+    currentFontKey.value = key;
+    await settingsBox.put(bodyFontKey, key);
+  }
+
   SystemUiOverlayStyle get systemUiOverlayStyle {
     final palette = currentPalette;
     final appBarBrightness = ThemeData.estimateBrightnessForColor(
@@ -106,9 +161,9 @@ class ThemeController extends GetxController {
           : Brightness.dark,
       statusBarBrightness: useLightIcons ? Brightness.dark : Brightness.light,
       systemNavigationBarColor: palette.primaryColor,
-      systemNavigationBarIconBrightness: ThemeData.estimateBrightnessForColor(
-        palette.primaryColor,
-      ) == Brightness.dark
+      systemNavigationBarIconBrightness:
+          ThemeData.estimateBrightnessForColor(palette.primaryColor) ==
+              Brightness.dark
           ? Brightness.light
           : Brightness.dark,
     );

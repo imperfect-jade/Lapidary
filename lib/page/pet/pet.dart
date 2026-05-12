@@ -45,14 +45,15 @@ class _PetPageState extends State<PetPage> {
   @override
   Widget build(BuildContext context) {
     final baseTheme = Theme.of(context);
+    final bodyFontFamily = Get.find<ThemeController>().currentBodyFontFamily;
     final petTheme = baseTheme.copyWith(
-      textTheme: baseTheme.textTheme.apply(fontFamily: 'HarmonyOSSansSC'),
+      textTheme: baseTheme.textTheme.apply(fontFamily: bodyFontFamily),
       primaryTextTheme: baseTheme.primaryTextTheme.apply(
-        fontFamily: 'HarmonyOSSansSC',
+        fontFamily: bodyFontFamily,
       ),
       appBarTheme: baseTheme.appBarTheme.copyWith(
         titleTextStyle: baseTheme.textTheme.titleLarge?.copyWith(
-          fontFamily: 'HarmonyOSSansSC',
+          fontFamily: bodyFontFamily,
           fontSize: 22,
           fontWeight: FontWeight.w600,
           color: Colors.black,

@@ -8,9 +8,10 @@ Widget getRouteWidget() {
   final themeController = Get.find<ThemeController>();
   return Obx(() {
     final palette = themeController.currentPalette;
+    final bodyFontFamily = themeController.currentBodyFontFamily;
     return GetMaterialApp(
       theme: ThemeData(
-        fontFamily: 'HarmonyOSSansSC',
+        fontFamily: bodyFontFamily,
         scaffoldBackgroundColor: palette.primaryColor,
         primaryColor: palette.appBarColor,
         colorScheme: ColorScheme.fromSeed(

@@ -14,6 +14,7 @@ part 'dialogs/version_dialog.dart';
 part 'drawer/app_drawer.dart';
 part 'settings/pet_name_dialog.dart';
 part 'settings/pet_settings_section.dart';
+part 'settings/font_settings_section.dart';
 part 'settings/theme_settings_section.dart';
 part 'sheets/pet_settings_sheet.dart';
 part 'sheets/settings_sheet.dart';

@@ -12,6 +12,30 @@
 .swiftpm/
 migrate_working_dir/
 /tmp/
+tmp/
+
+# Local project instructions
+AGENTS.md
+
+# Environment and private files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+*.p12
+*.cer
+*.crt
+*.mobileprovision
+*.provisionprofile
+*.keystore
+*.jks
+key.properties
+local.properties
+google-services.json
+GoogleService-Info.plist
+firebase_options.dart
 
 # IntelliJ related
 *.iml

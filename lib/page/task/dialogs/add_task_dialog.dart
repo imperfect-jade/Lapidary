@@ -75,12 +75,20 @@ void _showAddTaskDialog(TaskController controller) {
       actions: [
         TextButton(onPressed: () => Get.back(), child: const Text('取消')),
         ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
             final title = titleController.text.trim();
             if (title.isEmpty) {
               Get.snackbar(
                 '请填写标题',
                 '任务标题不能为空',
+                snackPosition: SnackPosition.BOTTOM,
+              );
+              return;
+            }
+            if (!selectedDeadline.value.isAfter(DateTime.now())) {
+              Get.snackbar(
+                '截止时间无效',
+                '请选择晚于当前时间的截止时间',
                 snackPosition: SnackPosition.BOTTOM,
               );
               return;
@@ -91,7 +99,7 @@ void _showAddTaskDialog(TaskController controller) {
                 ? int.tryParse(focusTargetController.text.trim()) ?? 0
                 : 0;
 
-            controller.addTask(
+            await controller.addTask(
               title,
               selectedDeadline.value,
               priority: selectedPriority.value,

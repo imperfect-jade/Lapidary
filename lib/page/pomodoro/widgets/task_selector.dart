@@ -23,6 +23,15 @@ class _TaskSelector extends StatelessWidget {
               const Icon(Icons.task_alt, size: 18, color: Colors.green),
               const SizedBox(width: 8),
               Flexible(child: Text('当前任务：$taskTitle')),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: () => controller.startFocus(
+                  taskId: controller.currentTaskId.value,
+                  taskTitle: taskTitle,
+                ),
+                icon: const Icon(Icons.play_arrow, size: 18),
+                label: const Text('开始专注'),
+              ),
               const SizedBox(width: 4),
               InkWell(
                 onTap: () {

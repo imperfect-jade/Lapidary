@@ -28,7 +28,7 @@ Widget _buildCalendar(
       // 样式
       calendarStyle: CalendarStyle(
         todayDecoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.3),
+          color: Colors.blue.withValues(alpha: 0.3),
           shape: BoxShape.circle,
         ),
         selectedDecoration: const BoxDecoration(

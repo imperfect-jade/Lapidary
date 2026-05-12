@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:todolist/constants/theme.dart';
 import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/page/calendar/calendar.dart';

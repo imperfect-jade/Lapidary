@@ -7,6 +7,7 @@ Widget _buildItemCard(
   TaskController taskController,
 ) {
   final isApp = item.source == 'app';
+  final linkedTask = isApp ? taskController.findTaskById(item.taskId) : null;
   final color = isApp
       ? (CalendarPage._priorityColors[item.priority] ?? Colors.grey)
       : Colors.purple;
@@ -15,7 +16,7 @@ Widget _buildItemCard(
     margin: const EdgeInsets.only(bottom: 8),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(8),
-      side: BorderSide(color: color.withOpacity(0.5)),
+      side: BorderSide(color: color.withValues(alpha: 0.5)),
     ),
     child: ListTile(
       leading: Container(
@@ -42,8 +43,8 @@ Widget _buildItemCard(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
             decoration: BoxDecoration(
               color: isApp
-                  ? Colors.blue.withOpacity(0.1)
-                  : Colors.purple.withOpacity(0.1),
+                  ? Colors.blue.withValues(alpha: 0.1)
+                  : Colors.purple.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
@@ -63,12 +64,9 @@ Widget _buildItemCard(
       trailing: isApp
           ? Checkbox(
               value: item.isCompleted ?? false,
-              onChanged: (_) {
-                final task = taskController.taskList.firstWhere(
-                  (t) => t.id == item.taskId,
-                );
-                taskController.updateTaskStatus(task);
-              },
+              onChanged: linkedTask == null
+                  ? null
+                  : (_) => taskController.updateTaskStatus(linkedTask),
             )
           : null,
       // 点击事件显示详情

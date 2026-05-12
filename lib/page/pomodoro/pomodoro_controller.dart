@@ -99,16 +99,23 @@ class PomodoroController extends GetxController {
   }
 
   // 计时完成
-  void _onTimerComplete() {
+  Future<void> _onTimerComplete() async {
     _timer?.cancel();
     isRunning.value = false;
+    isPaused.value = false;
+    final completedMode = currentMode.value;
+    final completedSeconds = _accumulatedSeconds;
 
     // 保存记录
-    _saveRecord(isCompleted: true);
+    await _saveRecord(
+      isCompleted: true,
+      mode: completedMode,
+      actualSeconds: completedSeconds,
+    );
 
-    if (currentMode.value == 'focus') {
+    if (completedMode == 'focus') {
       // 专注完成，更新统计
-      todayFocusMinutes.value += _accumulatedSeconds ~/ 60;
+      todayFocusMinutes.value += completedSeconds ~/ 60;
       todayPomodoroCount.value++;
       _accumulatedSeconds = 0;
       // 自动开始休息
@@ -118,6 +125,7 @@ class PomodoroController extends GetxController {
       // 休息完成
       Get.snackbar('休息结束', '准备好继续专注了吗？', snackPosition: SnackPosition.BOTTOM);
       _accumulatedSeconds = 0;
+      currentMode.value = 'focus';
       remainingSeconds.value = focusDuration.value * 60;
     }
   }
@@ -147,39 +155,49 @@ class PomodoroController extends GetxController {
   }
 
   // 放弃
-  void giveUp() {
+  Future<void> giveUp() async {
+    final mode = currentMode.value;
     _timer?.cancel();
     isRunning.value = false;
     isPaused.value = false;
 
     // 保存未完成的记录
-    _saveRecord(isCompleted: false);
+    await _saveRecord(isCompleted: false, mode: mode);
     _accumulatedSeconds = 0;
+    currentMode.value = 'focus';
     remainingSeconds.value = focusDuration.value * 60;
     currentTaskId.value = null;
     currentTaskTitle.value = null;
   }
 
   // 保存记录
-  Future<void> _saveRecord({required bool isCompleted}) async {
+  Future<void> _saveRecord({
+    required bool isCompleted,
+    required String mode,
+    int? actualSeconds,
+  }) async {
+    final startedAt = _startTime;
+    if (startedAt == null) {
+      return;
+    }
     final record = PomodoroModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       taskId: currentTaskId.value,
       taskTitle: currentTaskTitle.value,
-      durationMinutes: currentMode.value == 'focus'
+      durationMinutes: mode == 'focus'
           ? focusDuration.value
           : breakDuration.value,
-      actualSeconds: _accumulatedSeconds,
-      startTime: _startTime!,
+      actualSeconds: actualSeconds ?? _accumulatedSeconds,
+      startTime: startedAt,
       endTime: DateTime.now(),
       isCompleted: isCompleted,
-      type: currentMode.value,
+      type: mode,
     );
 
     await pomodoroBox.put(record.id, record);
     if (isCompleted && Get.isRegistered<RewardController>()) {
       final reward = await Get.find<RewardController>().awardPomodoro(record);
-      if (reward > 0 && currentMode.value == 'focus') {
+      if (reward > 0 && mode == 'focus') {
         Get.snackbar(
           '获得奖励',
           '专注奖励 +$reward 积分',

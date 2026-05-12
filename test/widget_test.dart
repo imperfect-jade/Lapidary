@@ -1,30 +1,18 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:todolist/main.dart';
+import 'package:todolist/model/task/task.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('task helpers expose stable labels and focus target state', () {
+    final task = TaskModel(
+      id: 'task-1',
+      title: '示例任务',
+      deadline: DateTime(2026, 5, 12, 10),
+      taskType: TaskType.week,
+      focusTargetMinutes: 25,
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(TaskType.labelOf(TaskType.day), '日任务');
+    expect(FocusTargetPeriod.labelOf(FocusTargetPeriod.daily), '每天');
+    expect(task.hasFocusTarget, isTrue);
   });
 }

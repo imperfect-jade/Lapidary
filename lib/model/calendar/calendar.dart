@@ -8,12 +8,12 @@ class CalendarModel {
   final String title;
   final String? description;
   final DateTime? startTime;
-  final String source;     // 'app' 或 'device'
-  final String? taskId;    // APP任务的ID
-  final String? eventId;   // 手机日历事件ID
-  final int? priority;     // APP任务优先级
+  final String source; // 'app' 或 'device'
+  final String? taskId; // APP任务的ID
+  final String? eventId; // 手机日历事件ID
+  final int? priority; // APP任务优先级
   final bool? isCompleted;
-  
+
   CalendarModel({
     required this.id,
     required this.title,

@@ -42,7 +42,7 @@ class TaskController extends GetxController {
     int focusTargetMinutes = 0,
   }) async {
     final task = TaskModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
       title: title,
       priority: priority,
       deadline: deadline,
@@ -56,6 +56,18 @@ class TaskController extends GetxController {
     taskList.add(task);
     _rebuildCaches();
     update(['task_list', 'quadrant', 'calendar']);
+  }
+
+  TaskModel? findTaskById(String? id) {
+    if (id == null || id.isEmpty) {
+      return null;
+    }
+    for (final task in taskList) {
+      if (task.id == id) {
+        return task;
+      }
+    }
+    return null;
   }
 
   Future<void> updateTask(TaskModel task) async {

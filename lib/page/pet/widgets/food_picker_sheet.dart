@@ -61,13 +61,26 @@ class _FoodPickerSheet extends StatelessWidget {
   }
 
   Future<void> _useFood(PetFood food) async {
-    final consumed = await rewardController.consumeFood(food);
-    if (!consumed) {
+    if (rewardController.foodCount(food.name) <= 0) {
       Get.snackbar('没有库存', '先去商城兑换这个食物吧', snackPosition: SnackPosition.BOTTOM);
       return;
     }
 
-    await petController.feedWithFood(food);
+    final fed = await petController.feedWithFood(food);
+    if (!fed) {
+      Get.snackbar(
+        '喂食失败',
+        '宠物状态还没准备好，请稍后再试',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    final consumed = await rewardController.consumeFood(food);
+    if (!consumed) {
+      Get.snackbar('库存已变化', '这个食物已经没有库存了', snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
     Get.back();
   }
 }

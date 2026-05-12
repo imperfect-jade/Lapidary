@@ -179,10 +179,10 @@ class PetController extends GetxController {
     _showTemporaryMessage('请选择已购买的${speciesLabel(species)}食物来喂食');
   }
 
-  Future<void> feedWithFood(PetFood food) async {
+  Future<bool> feedWithFood(PetFood food) async {
     final currentPet = pet.value;
     if (currentPet == null) {
-      return;
+      return false;
     }
 
     await refreshPetState();
@@ -196,6 +196,7 @@ class PetController extends GetxController {
     _gainExp(10 + food.cost ~/ 10);
     await _saveAndNotify();
     _resetActionLater();
+    return true;
   }
 
   Future<void> selectPetSpecies(String species) async {

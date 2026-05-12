@@ -46,6 +46,14 @@ class _AppDrawer extends StatelessWidget {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.auto_awesome_outlined),
+              title: const Text('关于琢玉'),
+              onTap: () {
+                Get.back();
+                _showAboutDialog();
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text('版本信息'),
               onTap: () {

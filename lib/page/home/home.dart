@@ -12,6 +12,7 @@ import 'package:todolist/page/task/task.dart';
 import 'package:todolist/page/home/home_controller.dart';
 
 part 'dialogs/version_dialog.dart';
+part 'dialogs/about_dialog.dart';
 part 'drawer/app_drawer.dart';
 part 'settings/pet_name_dialog.dart';
 part 'settings/pet_settings_section.dart';

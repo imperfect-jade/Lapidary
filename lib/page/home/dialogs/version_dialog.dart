@@ -13,9 +13,15 @@ void _showVersionDialog() {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('应用名称：待办陪伴'),
+              const Text('应用名称：琢玉（Lapidary）'),
               const SizedBox(height: 8),
               Text('当前版本：$version'),
+              const SizedBox(height: 8),
+              const Text('GitHub 仓库：'),
+              const SizedBox(height: 4),
+              const SelectableText(
+                'https://github.com/imperfect-jade/Lapidary.git',
+              ),
             ],
           );
         },

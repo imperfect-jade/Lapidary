@@ -6,11 +6,13 @@ import 'package:todolist/constants/theme.dart';
 import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
 import 'package:todolist/model/reward/reward_wallet.dart';
+import 'package:todolist/model/schedule/schedule.dart';
 import 'package:todolist/model/task/task.dart';
 import 'package:todolist/page/calendar/calendar_controller.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
 import 'package:todolist/page/pet/reward_controller.dart';
 import 'package:todolist/page/pomodoro/pomodoro_controller.dart';
+import 'package:todolist/page/schedule/schedule_controller.dart';
 import 'package:todolist/page/splash/splash.dart';
 import 'package:todolist/page/task/task_controller.dart';
 import 'package:todolist/routes/index.dart';
@@ -90,11 +92,16 @@ Future<void> initializeApp() async {
   _registerAdapter(PomodoroModelAdapter());
   _registerAdapter(PetModelAdapter());
   _registerAdapter(RewardWalletModelAdapter());
+  _registerAdapter(ScheduleSessionModelAdapter());
+  _registerAdapter(ScheduleSemesterModelAdapter());
 
   await _openTypedBox<TaskModel>('tasks');
   await _openTypedBox<PomodoroModel>('pomodoros');
   await _openTypedBox<PetModel>('pets');
   await _openTypedBox<RewardWalletModel>('reward_wallet');
+  await _openTypedBox<ScheduleSemesterModel>(
+    ScheduleController.semesterBoxName,
+  );
   await _openBox(ThemeController.settingsBoxName);
 
   _putController(() => ThemeController());
@@ -102,6 +109,7 @@ Future<void> initializeApp() async {
   _putController(() => TaskController());
   _putController(() => PomodoroController());
   _putController(() => CalendarController());
+  _putController(() => ScheduleController());
   _putController(() => PetController());
 }
 

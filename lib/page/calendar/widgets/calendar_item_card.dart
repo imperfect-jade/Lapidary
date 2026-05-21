@@ -74,3 +74,73 @@ Widget _buildItemCard(
     ),
   );
 }
+
+Widget _buildScheduleSessionCalendarCard(
+  BuildContext context,
+  ScheduleController scheduleController,
+  ScheduleSemesterModel semester,
+  ScheduleSessionModel session,
+  AppThemePalette palette,
+) {
+  final color = _scheduleColorForSession(session, palette);
+  final timeRange = _scheduleSessionTimeRange(semester, session);
+  final location = _scheduleValueOrFallback(session.location);
+
+  return Card(
+    margin: const EdgeInsets.only(bottom: 8),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+      side: BorderSide(color: color.withValues(alpha: 0.5)),
+    ),
+    child: ListTile(
+      leading: Container(
+        width: 4,
+        height: 48,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+      title: Text(
+        session.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontWeight: FontWeight.w700),
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildScheduleCalendarInfoLine(Icons.schedule, '时间：$timeRange'),
+            const SizedBox(height: 2),
+            _buildScheduleCalendarInfoLine(Icons.location_on, '地点：$location'),
+          ],
+        ),
+      ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => _showScheduleSessionDetailDialog(
+        context,
+        scheduleController,
+        [session],
+      ),
+    ),
+  );
+}
+
+Widget _buildScheduleCalendarInfoLine(IconData icon, String text) {
+  return Row(
+    children: [
+      Icon(icon, size: 14, color: Colors.grey[600]),
+      const SizedBox(width: 4),
+      Expanded(
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+        ),
+      ),
+    ],
+  );
+}

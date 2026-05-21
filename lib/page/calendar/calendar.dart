@@ -5,6 +5,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:todolist/constants/theme.dart';
 import 'package:todolist/model/calendar/calendar.dart';
 import 'package:todolist/model/schedule/schedule.dart';
+import 'package:todolist/model/task/task.dart';
 import 'package:todolist/page/calendar/calendar_controller.dart';
 import 'package:todolist/page/schedule/schedule_controller.dart';
 import 'package:todolist/page/task/task_controller.dart';
@@ -14,6 +15,7 @@ part 'dialogs/schedule_session_dialog.dart';
 part 'sheets/schedule_session_sheet.dart';
 part 'sheets/item_detail_sheet.dart';
 part 'utils/formatters.dart';
+part 'utils/schedule_calendar_helpers.dart';
 part 'widgets/calendar_item_card.dart';
 part 'widgets/calendar_view.dart';
 part 'widgets/day_item_list.dart';
@@ -81,10 +83,19 @@ class CalendarPage extends StatelessWidget {
           builder: (taskController) {
             return Column(
               children: [
-                _buildCalendar(calenderController, taskController),
+                _buildCalendar(
+                  calenderController,
+                  taskController,
+                  scheduleController,
+                ),
                 const Divider(height: 1),
                 Expanded(
-                  child: _buildDayList(calenderController, taskController),
+                  child: _buildDayList(
+                    context,
+                    calenderController,
+                    taskController,
+                    scheduleController,
+                  ),
                 ),
               ],
             );

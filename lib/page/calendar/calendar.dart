@@ -43,49 +43,54 @@ class CalendarPage extends StatelessWidget {
         foregroundColor: Colors.black,
         title: const Text('日历'),
         actions: [
-          // 同步权限状态
           Obx(
             () => IconButton(
+              tooltip:
+                  scheduleController.viewMode.value ==
+                      CalendarContentView.schedule
+                  ? '切换到月历'
+                  : '切换到课表',
               icon: Icon(
-                calenderController.hasPermission.value
-                    ? Icons.sync
-                    : Icons.sync_disabled,
+                scheduleController.viewMode.value ==
+                        CalendarContentView.schedule
+                    ? Icons.calendar_month
+                    : Icons.view_week,
               ),
-              onPressed: () => calenderController.requestPermission(),
+              onPressed: () {
+                final target =
+                    scheduleController.viewMode.value ==
+                        CalendarContentView.schedule
+                    ? CalendarContentView.month
+                    : CalendarContentView.schedule;
+                scheduleController.changeViewMode(target);
+              },
             ),
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildCalendarModeSwitch(scheduleController),
-          Expanded(
-            child: Obx(() {
-              if (scheduleController.viewMode.value ==
-                  CalendarContentView.schedule) {
-                return _buildScheduleView(context, scheduleController);
-              }
-              return GetBuilder<TaskController>(
-                id: 'calendar',
-                builder: (taskController) {
-                  return Column(
-                    children: [
-                      _buildCalendar(calenderController, taskController),
-                      const Divider(height: 1),
-                      Expanded(
-                        child: _buildDayList(
-                          calenderController,
-                          taskController,
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              );
-            }),
-          ),
-        ],
+      floatingActionButton: _buildScheduleFloatingActionButton(
+        context,
+        scheduleController,
       ),
+      body: Obx(() {
+        if (scheduleController.viewMode.value == CalendarContentView.schedule) {
+          return _buildScheduleView(context, scheduleController);
+        }
+        return GetBuilder<TaskController>(
+          id: 'calendar',
+          builder: (taskController) {
+            return Column(
+              children: [
+                _buildCalendar(calenderController, taskController),
+                const Divider(height: 1),
+                Expanded(
+                  child: _buildDayList(calenderController, taskController),
+                ),
+              ],
+            );
+          },
+        );
+      }),
     );
   }
 }

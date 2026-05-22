@@ -40,8 +40,9 @@ class ThemeController extends GetxController {
   static const String settingsBoxName = 'settings';
   static const String themeKey = 'theme_key';
   static const String bodyFontKey = 'body_font_key';
-  static const String defaultBodyFontKey = 'maokengwangxing_yuan';
-  static const String defaultBodyFontFamily = 'MaoKenWangXingYuan';
+  static const String defaultThemeKey = 'green';
+  static const String defaultBodyFontKey = 'harmony';
+  static const String defaultBodyFontFamily = 'HarmonyOSSansSC';
 
   static const List<AppThemePalette> palettes = [
     AppThemePalette(
@@ -86,14 +87,14 @@ class ThemeController extends GetxController {
       description: '清晰稳重，适合长时间阅读',
     ),
     AppFontOption(
-      key: defaultBodyFontKey,
+      key: 'maoken',
       label: '猫啃忘形圆',
-      fontFamily: defaultBodyFontFamily,
+      fontFamily: 'MaoKenWangXingYuan',
       description: '圆润醒目，适合轻松温馨的界面',
     ),
   ];
 
-  final currentThemeKey = 'blue'.obs;
+  final currentThemeKey = defaultThemeKey.obs;
   final currentFontKey = defaultBodyFontKey.obs;
 
   late Box settingsBox;
@@ -118,7 +119,10 @@ class ThemeController extends GetxController {
   AppThemePalette get currentPalette {
     return palettes.firstWhere(
       (palette) => palette.key == currentThemeKey.value,
-      orElse: () => palettes[2],
+      orElse: () => palettes.firstWhere(
+        (palette) => palette.key == defaultThemeKey,
+        orElse: () => palettes.first,
+      ),
     );
   }
 
@@ -134,7 +138,10 @@ class ThemeController extends GetxController {
   AppFontOption get currentFont {
     return fontOptions.firstWhere(
       (option) => option.key == currentFontKey.value,
-      orElse: () => fontOptions[1],
+      orElse: () => fontOptions.firstWhere(
+        (option) => option.key == defaultBodyFontKey,
+        orElse: () => fontOptions.first,
+      ),
     );
   }
 
@@ -179,7 +186,10 @@ class TaskTheme {
     if (Get.isRegistered<ThemeController>()) {
       return Get.find<ThemeController>().currentPalette;
     }
-    return ThemeController.palettes[2];
+    return ThemeController.palettes.firstWhere(
+      (palette) => palette.key == ThemeController.defaultThemeKey,
+      orElse: () => ThemeController.palettes.first,
+    );
   }
 
   static Color get primaryColor => palette.primaryColor;

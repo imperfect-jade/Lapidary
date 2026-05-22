@@ -226,21 +226,37 @@ void _showScheduleSessionDialog(
           onPressed: () async {
             final name = nameController.text.trim();
             if (name.isEmpty) {
-              Get.snackbar('请填写课程名', '课程名不能为空');
+              Get.snackbar(
+                '请填写课程名',
+                '课程名不能为空',
+                snackPosition: SnackPosition.BOTTOM,
+              );
               return;
             }
             if (!firstHalf.value && !secondHalf.value) {
-              Get.snackbar('请选择学期范围', '课程至少要属于上半或下半学期');
+              Get.snackbar(
+                '请选择学期范围',
+                '课程至少要属于上半或下半学期',
+                snackPosition: SnackPosition.BOTTOM,
+              );
               return;
             }
             if (!customRepeat.value && !oddWeek.value && !evenWeek.value) {
-              Get.snackbar('请选择单双周', '课程至少要在单周或双周上课');
+              Get.snackbar(
+                '请选择单双周',
+                '课程至少要在单周或双周上课',
+                snackPosition: SnackPosition.BOTTOM,
+              );
               return;
             }
 
             final customWeeks = _parseCustomWeeks(customWeeksController.text);
             if (customRepeat.value && customWeeks.isEmpty) {
-              Get.snackbar('请填写上课周', '指定上课周不能为空');
+              Get.snackbar(
+                '请填写上课周',
+                '指定上课周不能为空',
+                snackPosition: SnackPosition.BOTTOM,
+              );
               return;
             }
 

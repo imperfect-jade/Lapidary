@@ -3,6 +3,7 @@ part of '../home.dart';
 void _showSettingsSheet() {
   Get.bottomSheet(
     Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
         color: Colors.white,

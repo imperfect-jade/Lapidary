@@ -55,7 +55,7 @@ Widget _buildItemCard(
           if (item.startTime != null) ...[
             const SizedBox(width: 8),
             Text(
-              _formatTime(item.startTime!), //TODO: 时间显示待修改
+              _formatTime(item.startTime!), 
               style: const TextStyle(fontSize: 10, color: Colors.grey),
             ),
           ],

@@ -7,6 +7,22 @@ import 'package:todolist/model/task/task.dart';
 
 enum PetAction { idle, pet, feed, sleep, taskComplete, overdue }
 
+class PetOverlayEvent {
+  final String id;
+  final PetAction action;
+  final String message;
+  final DateTime createdAt;
+  final int moodDelta;
+
+  const PetOverlayEvent({
+    required this.id,
+    required this.action,
+    required this.message,
+    required this.createdAt,
+    required this.moodDelta,
+  });
+}
+
 class PetFood {
   final String species;
   final String name;
@@ -82,6 +98,7 @@ class PetController extends GetxController {
   final action = PetAction.idle.obs;
   final feedbackTick = 0.obs;
   final feedbackAction = PetAction.idle.obs;
+  final overlayEvent = Rxn<PetOverlayEvent>();
 
   late Box<PetModel> petBox;
   Timer? _stateTimer;
@@ -163,13 +180,12 @@ class PetController extends GetxController {
 
     await refreshPetState();
     currentPet.isSleeping = false;
-    currentPet.mood = _clampStat(currentPet.mood + 12);
+    currentPet.mood = _clampStat(currentPet.mood + 1);
     currentPet.energy = _clampStat(currentPet.energy - 2);
     currentPet.lastInteractionAt = DateTime.now();
     action.value = PetAction.pet;
     _emitFeedback(PetAction.pet);
     _showTemporaryMessage('${currentPet.name}蹭了蹭你的手');
-    _gainExp(8);
     await _saveAndNotify();
     _resetActionLater();
   }
@@ -211,11 +227,18 @@ class PetController extends GetxController {
     if (wasSleeping) {
       currentPet.isSleeping = true;
     }
-    currentPet.mood = _clampStat(currentPet.mood + _taskMoodBoost(task));
+    final moodBoost = _taskMoodBoost(task);
+    final messageText = _taskCompletionMessage(currentPet, task);
+    currentPet.mood = _clampStat(currentPet.mood + moodBoost);
     currentPet.lastInteractionAt = DateTime.now();
     action.value = PetAction.taskComplete;
     _emitFeedback(PetAction.taskComplete);
-    _showTemporaryMessage(_taskCompletionMessage(currentPet, task));
+    _showTemporaryMessage(messageText);
+    _emitOverlayEvent(
+      PetAction.taskComplete,
+      messageText,
+      moodDelta: moodBoost,
+    );
     await _saveAndNotify();
     _resetActionLater(restoreSleep: wasSleeping);
   }
@@ -235,11 +258,13 @@ class PetController extends GetxController {
       currentPet.isSleeping = true;
     }
     final penalty = (count * 2).clamp(0, 6).toInt();
+    final messageText = _overdueMessage(count, title);
     currentPet.mood = _clampStat(currentPet.mood - penalty);
     currentPet.lastInteractionAt = DateTime.now();
     action.value = PetAction.overdue;
     _emitFeedback(PetAction.overdue);
-    _showTemporaryMessage(_overdueMessage(count, title));
+    _showTemporaryMessage(messageText);
+    _emitOverlayEvent(PetAction.overdue, messageText, moodDelta: -penalty);
     await _saveAndNotify();
     _resetActionLater(
       duration: const Duration(milliseconds: 1400),
@@ -359,6 +384,21 @@ class PetController extends GetxController {
   void _emitFeedback(PetAction nextAction) {
     feedbackAction.value = nextAction;
     feedbackTick.value++;
+  }
+
+  void _emitOverlayEvent(
+    PetAction nextAction,
+    String text, {
+    required int moodDelta,
+  }) {
+    final now = DateTime.now();
+    overlayEvent.value = PetOverlayEvent(
+      id: '${now.microsecondsSinceEpoch}_${nextAction.name}',
+      action: nextAction,
+      message: text,
+      createdAt: now,
+      moodDelta: moodDelta,
+    );
   }
 
   String _statusMessage(PetModel currentPet) {

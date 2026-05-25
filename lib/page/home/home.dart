@@ -97,6 +97,12 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                 ),
+                Obx(() {
+                  if (controller.currentIndex.value == 2) {
+                    return const SizedBox.shrink();
+                  }
+                  return const PetGlobalFeedbackOverlay();
+                }),
               ],
             );
           },

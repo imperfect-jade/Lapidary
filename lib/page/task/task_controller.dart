@@ -105,10 +105,10 @@ class TaskController extends GetxController {
             '获得 $reward 积分',
             snackPosition: SnackPosition.BOTTOM,
           );
+          if (Get.isRegistered<PetController>()) {
+            await Get.find<PetController>().celebrateTaskCompletion(task);
+          }
         }
-      }
-      if (Get.isRegistered<PetController>()) {
-        await Get.find<PetController>().celebrateTaskCompletion(task);
       }
     }
     _rebuildCaches();

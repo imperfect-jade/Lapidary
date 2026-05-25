@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:todolist/constants/theme.dart';
+import 'package:todolist/page/pet/pet.dart';
 import 'package:todolist/page/pomodoro/pomodoro_controller.dart';
 import 'package:todolist/page/task/task_controller.dart';
 

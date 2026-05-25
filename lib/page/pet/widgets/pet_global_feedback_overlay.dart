@@ -198,8 +198,14 @@ class _PetOverlayCard extends StatelessWidget {
 class _MiniPetSprite extends StatefulWidget {
   final PetController controller;
   final PetAction action;
+  final _SpriteActionKey? spriteAction;
 
-  const _MiniPetSprite({required this.controller, required this.action});
+  const _MiniPetSprite({
+    super.key,
+    required this.controller,
+    required this.action,
+    this.spriteAction,
+  });
 
   @override
   State<_MiniPetSprite> createState() => _MiniPetSpriteState();
@@ -226,6 +232,10 @@ class _MiniPetSpriteState extends State<_MiniPetSprite> {
       _loadSprite();
     }
     if (oldWidget.action != widget.action) {
+      _lastAction = null;
+      _frameIndex = 0;
+      _syncAnimation();
+    } else if (oldWidget.spriteAction != widget.spriteAction) {
       _lastAction = null;
       _frameIndex = 0;
       _syncAnimation();
@@ -283,6 +293,10 @@ class _MiniPetSpriteState extends State<_MiniPetSprite> {
   }
 
   _SpriteActionKey _actionKeyFor(PetAction action) {
+    final spriteAction = widget.spriteAction;
+    if (spriteAction != null) {
+      return spriteAction;
+    }
     if (action == PetAction.overdue) {
       return _SpriteActionKey.overdue;
     }

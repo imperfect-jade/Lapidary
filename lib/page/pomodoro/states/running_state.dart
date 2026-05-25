@@ -19,7 +19,17 @@ class _RunningState extends StatelessWidget {
                 const _MotivationQuoteTicker(),
                 const SizedBox(height: 24),
                 _ModeLabel(controller: controller),
-                const SizedBox(height: 18),
+                Obx(() {
+                  if (controller.currentMode.value != 'focus') {
+                    return const SizedBox(height: 18);
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 14, bottom: 18),
+                    child: PetFocusCompanionCard(
+                      taskTitle: controller.currentTaskTitle.value,
+                    ),
+                  );
+                }),
                 _TimerProgress(controller: controller),
                 const SizedBox(height: 24),
                 _RunningTaskInfo(controller: controller),

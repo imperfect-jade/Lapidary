@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:todolist/model/pet/pet.dart';
+import 'package:todolist/model/pomodoro/pomodoro.dart';
 import 'package:todolist/model/task/task.dart';
 
 enum PetAction { idle, pet, feed, sleep, taskComplete, overdue }
@@ -214,6 +215,51 @@ class PetController extends GetxController {
     await _saveAndNotify();
     _resetActionLater();
     return true;
+  }
+
+  void startFocusCompanion({String? taskTitle}) {
+    final currentPet = pet.value;
+    if (currentPet == null) {
+      return;
+    }
+
+    final target = taskTitle == null || taskTitle.isEmpty
+        ? '这一轮'
+        : '“$taskTitle”';
+    _showTemporaryMessage('${currentPet.name}正在陪你专注，先守住$target。');
+  }
+
+  Future<void> celebrateFocusCompletion(
+    PomodoroModel record,
+    int reward,
+  ) async {
+    final currentPet = pet.value;
+    if (currentPet == null) {
+      return;
+    }
+
+    final wasSleeping = currentPet.isSleeping;
+    await refreshPetState();
+    if (wasSleeping) {
+      currentPet.isSleeping = true;
+    }
+    const moodBoost = 6;
+    currentPet.mood = _clampStat(currentPet.mood + moodBoost);
+    currentPet.energy = _clampStat(currentPet.energy - 4);
+    currentPet.lastInteractionAt = DateTime.now();
+    _gainExp(8);
+
+    final messageText = _focusCompletionMessage(currentPet, record, reward);
+    action.value = PetAction.taskComplete;
+    _emitFeedback(PetAction.taskComplete);
+    _showTemporaryMessage(messageText);
+    _emitOverlayEvent(
+      PetAction.taskComplete,
+      messageText,
+      moodDelta: moodBoost,
+    );
+    await _saveAndNotify();
+    _resetActionLater(restoreSleep: wasSleeping);
   }
 
   Future<void> celebrateTaskCompletion(TaskModel task) async {
@@ -444,6 +490,18 @@ class PetController extends GetxController {
       return '“$title”超过时间了，我们先从一点点开始吧。';
     }
     return '有 $count 个任务超过时间了，我们先从一个小任务重新开始吧。';
+  }
+
+  String _focusCompletionMessage(
+    PetModel currentPet,
+    PomodoroModel record,
+    int reward,
+  ) {
+    final minutes = record.actualSeconds ~/ 60;
+    if (record.taskTitle != null && record.taskTitle!.isNotEmpty) {
+      return '${currentPet.name}陪你专注了 $minutes 分钟，“${record.taskTitle}”向前推进啦！';
+    }
+    return '${currentPet.name}陪你守住了 $minutes 分钟专注，奖励 +$reward 积分！';
   }
 
   int _clampStat(int value) {

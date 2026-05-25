@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
+import 'package:todolist/page/pet/pet_controller.dart';
 import 'package:todolist/page/pet/reward_controller.dart';
 
 class PomodoroController extends GetxController {
@@ -67,6 +68,9 @@ class PomodoroController extends GetxController {
     currentTaskTitle.value = taskTitle;
     currentMode.value = 'focus';
     _startTimer(focusDuration.value * 60);
+    if (Get.isRegistered<PetController>()) {
+      Get.find<PetController>().startFocusCompanion(taskTitle: taskTitle);
+    }
   }
 
   // 开始休息
@@ -203,6 +207,12 @@ class PomodoroController extends GetxController {
           '专注奖励 +$reward 积分',
           snackPosition: SnackPosition.BOTTOM,
         );
+        if (Get.isRegistered<PetController>()) {
+          await Get.find<PetController>().celebrateFocusCompletion(
+            record,
+            reward,
+          );
+        }
       }
     }
   }

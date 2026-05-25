@@ -22,6 +22,7 @@ part 'widgets/food_picker_sheet.dart';
 part 'widgets/growth_panel.dart';
 part 'widgets/message_bubble.dart';
 part 'widgets/pet_stage.dart';
+part 'widgets/pet_focus_companion_card.dart';
 part 'widgets/pet_global_feedback_overlay.dart';
 part 'widgets/reward_shop_panel.dart';
 part 'widgets/status_grid.dart';

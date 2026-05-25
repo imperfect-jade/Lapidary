@@ -11,6 +11,64 @@ class _PetFeedbackOverlay extends StatelessWidget {
     return Obx(() {
       final tick = controller.feedbackTick.value;
       final feedbackAction = controller.feedbackAction.value;
+      if (feedbackAction == PetAction.taskComplete && tick > 0) {
+        return Positioned(
+          key: ValueKey('task_complete_feedback_$tick'),
+          top: 42,
+          right: 58,
+          child: SizedBox(
+            width: 104,
+            height: 82,
+            child: Stack(
+              children: const [
+                Positioned(
+                  left: 34,
+                  top: 8,
+                  child: _FloatingFeedback(
+                    icon: Icons.star_rounded,
+                    color: Colors.amber,
+                    size: 40,
+                  ),
+                ),
+                Positioned(
+                  left: 8,
+                  top: 30,
+                  child: _FloatingFeedback(
+                    icon: Icons.auto_awesome,
+                    color: Color.fromARGB(255, 255, 193, 7),
+                    delay: Duration(milliseconds: 100),
+                    size: 30,
+                  ),
+                ),
+                Positioned(
+                  right: 8,
+                  top: 28,
+                  child: _FloatingFeedback(
+                    icon: Icons.star_rounded,
+                    color: Color.fromARGB(255, 255, 179, 0),
+                    delay: Duration(milliseconds: 200),
+                    size: 32,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      if (feedbackAction == PetAction.overdue && tick > 0) {
+        return Positioned(
+          key: ValueKey('overdue_feedback_$tick'),
+          top: 50,
+          right: 70,
+          child: const _FloatingFeedback(
+            icon: Icons.access_time,
+            color: Colors.blueGrey,
+            size: 36,
+          ),
+        );
+      }
+
       if (pet.isSleeping) {
         return const Positioned(
           top: 48,

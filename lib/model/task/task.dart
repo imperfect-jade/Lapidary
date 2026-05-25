@@ -74,6 +74,9 @@ class TaskModel extends HiveObject {
   @HiveField(9, defaultValue: 0)
   int focusTargetMinutes;
 
+  @HiveField(10, defaultValue: false)
+  bool overdueMoodPenaltyApplied;
+
   TaskModel({
     required this.id,
     required this.title,
@@ -85,6 +88,7 @@ class TaskModel extends HiveObject {
     this.taskType = TaskType.day,
     this.focusTargetPeriod = FocusTargetPeriod.daily,
     this.focusTargetMinutes = 0,
+    this.overdueMoodPenaltyApplied = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
   bool get hasFocusTarget {

@@ -7,6 +7,8 @@ enum _SpriteActionKey {
   pet,
   feed,
   sleep,
+  taskComplete,
+  overdue,
   jumping,
   waiting,
   running,

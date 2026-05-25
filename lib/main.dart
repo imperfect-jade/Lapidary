@@ -106,11 +106,11 @@ Future<void> initializeApp() async {
 
   _putController(() => ThemeController());
   _putController(() => RewardController());
+  _putController(() => PetController());
   _putController(() => TaskController());
   _putController(() => PomodoroController());
   _putController(() => CalendarController());
   _putController(() => ScheduleController());
-  _putController(() => PetController());
 }
 
 void _registerAdapter<T>(TypeAdapter<T> adapter) {

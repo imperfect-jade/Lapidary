@@ -168,6 +168,16 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
         _SpriteActionKey.pet: _animationFrom(actions, 'pet'),
         _SpriteActionKey.feed: _animationFrom(actions, 'feed'),
         _SpriteActionKey.sleep: _animationFrom(actions, 'sleep'),
+        _SpriteActionKey.taskComplete: _animationFromOr(
+          actions,
+          'taskComplete',
+          'jumping',
+        ),
+        _SpriteActionKey.overdue: _animationFromOr(
+          actions,
+          'overdue',
+          'waiting',
+        ),
         _SpriteActionKey.jumping: _animationFromOr(actions, 'jumping', 'pet'),
         _SpriteActionKey.waiting: _animationFromOr(actions, 'waiting', 'idle'),
         _SpriteActionKey.running: _animationFromOr(
@@ -221,6 +231,16 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
         _SpriteActionKey.pet: _SpriteAnimationSpec(row: 2, frames: 4, fps: 7),
         _SpriteActionKey.feed: _SpriteAnimationSpec(row: 3, frames: 4, fps: 7),
         _SpriteActionKey.sleep: _SpriteAnimationSpec(row: 4, frames: 4, fps: 4),
+        _SpriteActionKey.taskComplete: _SpriteAnimationSpec(
+          row: 2,
+          frames: 4,
+          fps: 7,
+        ),
+        _SpriteActionKey.overdue: _SpriteAnimationSpec(
+          row: 0,
+          frames: 4,
+          fps: 5,
+        ),
         _SpriteActionKey.jumping: _SpriteAnimationSpec(
           row: 2,
           frames: 4,
@@ -262,6 +282,16 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
         _SpriteActionKey.pet: _SpriteAnimationSpec(row: 2, frames: 4, fps: 7),
         _SpriteActionKey.feed: _SpriteAnimationSpec(row: 3, frames: 4, fps: 7),
         _SpriteActionKey.sleep: _SpriteAnimationSpec(row: 4, frames: 4, fps: 4),
+        _SpriteActionKey.taskComplete: _SpriteAnimationSpec(
+          row: 2,
+          frames: 4,
+          fps: 7,
+        ),
+        _SpriteActionKey.overdue: _SpriteAnimationSpec(
+          row: 0,
+          frames: 4,
+          fps: 5,
+        ),
         _SpriteActionKey.jumping: _SpriteAnimationSpec(
           row: 2,
           frames: 4,
@@ -352,7 +382,7 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
     if (!mounted || widget.pet.isSleeping) {
       return;
     }
-    if (action == PetAction.pet || action == PetAction.feed) {
+    if (_usesActionAnimation(action)) {
       _behaviorTimer?.cancel();
       _captureCurrentPosition();
       _moveController.stop();
@@ -488,6 +518,9 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
   }
 
   _SpriteActionKey _resolveSpriteAction(PetAction action) {
+    if (action == PetAction.taskComplete) {
+      return _SpriteActionKey.taskComplete;
+    }
     if (widget.pet.isSleeping) {
       return _SpriteActionKey.sleep;
     }
@@ -496,6 +529,9 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
     }
     if (action == PetAction.feed) {
       return _SpriteActionKey.feed;
+    }
+    if (action == PetAction.overdue) {
+      return _SpriteActionKey.overdue;
     }
     switch (_ambientMotion) {
       case _AmbientPetMotion.runRight:
@@ -511,6 +547,13 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
       case _AmbientPetMotion.idle:
         return _SpriteActionKey.idle;
     }
+  }
+
+  bool _usesActionAnimation(PetAction action) {
+    return action == PetAction.pet ||
+        action == PetAction.feed ||
+        action == PetAction.taskComplete ||
+        action == PetAction.overdue;
   }
 
   @override
@@ -536,7 +579,9 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
                   ? 1.5 * _idleController.value
                   : 5 * _idleController.value;
               final actionBounce =
-                  action == PetAction.pet || action == PetAction.feed
+                  action == PetAction.pet ||
+                      action == PetAction.feed ||
+                      action == PetAction.taskComplete
                   ? -12.0
                   : 0.0;
               final displaySize = spec?.displaySize ?? const Size(176, 176);

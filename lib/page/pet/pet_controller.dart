@@ -3,8 +3,9 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:todolist/model/pet/pet.dart';
+import 'package:todolist/model/task/task.dart';
 
-enum PetAction { idle, pet, feed, sleep }
+enum PetAction { idle, pet, feed, sleep, taskComplete, overdue }
 
 class PetFood {
   final String species;
@@ -199,6 +200,53 @@ class PetController extends GetxController {
     return true;
   }
 
+  Future<void> celebrateTaskCompletion(TaskModel task) async {
+    final currentPet = pet.value;
+    if (currentPet == null) {
+      return;
+    }
+
+    final wasSleeping = currentPet.isSleeping;
+    await refreshPetState();
+    if (wasSleeping) {
+      currentPet.isSleeping = true;
+    }
+    currentPet.mood = _clampStat(currentPet.mood + _taskMoodBoost(task));
+    currentPet.lastInteractionAt = DateTime.now();
+    action.value = PetAction.taskComplete;
+    _emitFeedback(PetAction.taskComplete);
+    _showTemporaryMessage(_taskCompletionMessage(currentPet, task));
+    await _saveAndNotify();
+    _resetActionLater(restoreSleep: wasSleeping);
+  }
+
+  Future<void> remindOverdueTasks(int count, String? title) async {
+    if (count <= 0) {
+      return;
+    }
+    final currentPet = pet.value;
+    if (currentPet == null) {
+      return;
+    }
+
+    final wasSleeping = currentPet.isSleeping;
+    await refreshPetState();
+    if (wasSleeping) {
+      currentPet.isSleeping = true;
+    }
+    final penalty = (count * 2).clamp(0, 6).toInt();
+    currentPet.mood = _clampStat(currentPet.mood - penalty);
+    currentPet.lastInteractionAt = DateTime.now();
+    action.value = PetAction.overdue;
+    _emitFeedback(PetAction.overdue);
+    _showTemporaryMessage(_overdueMessage(count, title));
+    await _saveAndNotify();
+    _resetActionLater(
+      duration: const Duration(milliseconds: 1400),
+      restoreSleep: wasSleeping,
+    );
+  }
+
   Future<void> selectPetSpecies(String species) async {
     final currentPet = pet.value;
     if (currentPet == null || currentPet.species == species) {
@@ -272,11 +320,16 @@ class PetController extends GetxController {
     pet.refresh();
   }
 
-  void _resetActionLater() {
-    Future.delayed(const Duration(milliseconds: 900), () {
-      if (action.value != PetAction.sleep) {
-        action.value = PetAction.idle;
+  void _resetActionLater({
+    Duration duration = const Duration(milliseconds: 900),
+    bool restoreSleep = false,
+  }) {
+    final pendingAction = action.value;
+    Future.delayed(duration, () {
+      if (action.value != pendingAction) {
+        return;
       }
+      action.value = restoreSleep ? PetAction.sleep : PetAction.idle;
     });
   }
 
@@ -322,6 +375,35 @@ class PetController extends GetxController {
       return '${currentPet.name}想要一点陪伴';
     }
     return '今天也一起慢慢完成任务吧';
+  }
+
+  int _taskMoodBoost(TaskModel task) {
+    switch (task.priority) {
+      case 1:
+        return 10;
+      case 3:
+        return 8;
+      case 2:
+        return 6;
+      case 4:
+        return 4;
+      default:
+        return 5;
+    }
+  }
+
+  String _taskCompletionMessage(PetModel currentPet, TaskModel task) {
+    if (task.priority == 1 || task.priority == 3) {
+      return '这件重要的事被你拿下了，${currentPet.name}超开心！';
+    }
+    return '${currentPet.name}开心地跳起来：任务完成啦，做得很好！';
+  }
+
+  String _overdueMessage(int count, String? title) {
+    if (count == 1 && title != null && title.isNotEmpty) {
+      return '“$title”超过时间了，我们先从一点点开始吧。';
+    }
+    return '有 $count 个任务超过时间了，我们先从一个小任务重新开始吧。';
   }
 
   int _clampStat(int value) {

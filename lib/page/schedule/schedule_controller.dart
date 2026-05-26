@@ -1,20 +1,21 @@
 import 'package:get/get.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:todolist/data/hive/box_names.dart';
+import 'package:todolist/data/repositories/schedule_repository.dart';
 import 'package:todolist/model/schedule/schedule.dart';
 
 enum CalendarContentView { month, schedule }
 
 class ScheduleController extends GetxController {
+  ScheduleController(this.repository);
+
   static const String semesterBoxName = BoxNames.scheduleSemesters;
 
+  final ScheduleRepository repository;
   final viewMode = CalendarContentView.month.obs;
   final semesters = <ScheduleSemesterModel>[].obs;
   final selectedSemesterId = RxnString();
   final useFirstHalf = true.obs;
   final hideCourseInformation = false.obs;
-
-  late Box<ScheduleSemesterModel> semesterBox;
 
   ScheduleSemesterModel? get selectedSemester {
     final id = selectedSemesterId.value;
@@ -42,7 +43,6 @@ class ScheduleController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    semesterBox = Hive.box<ScheduleSemesterModel>(semesterBoxName);
     loadSemesters();
   }
 
@@ -63,8 +63,7 @@ class ScheduleController extends GetxController {
   }
 
   void loadSemesters() {
-    final items = semesterBox.values.toList()
-      ..sort((a, b) => b.id.compareTo(a.id));
+    final items = repository.getAll()..sort((a, b) => b.id.compareTo(a.id));
     semesters.value = items;
     if (items.isEmpty) {
       selectedSemesterId.value = null;
@@ -94,7 +93,7 @@ class ScheduleController extends GetxController {
         secondHalfEnd: secondHalfEnd,
       ),
     );
-    await semesterBox.put(id, semester);
+    await repository.put(semester);
     selectedSemesterId.value = id;
     useFirstHalf.value = true;
     loadSemesters();
@@ -139,7 +138,7 @@ class ScheduleController extends GetxController {
   }
 
   Future<void> _saveSemester(ScheduleSemesterModel semester) async {
-    await semesterBox.put(semester.id, semester);
+    await repository.put(semester);
     loadSemesters();
     semesters.refresh();
   }

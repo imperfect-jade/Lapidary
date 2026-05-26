@@ -1,13 +1,15 @@
 import 'dart:async';
 
 import 'package:get/get.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:todolist/data/hive/box_names.dart';
+import 'package:todolist/data/repositories/task_repository.dart';
 import 'package:todolist/model/task/task.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
 import 'package:todolist/page/pet/reward_controller.dart';
 
 class TaskController extends GetxController {
+  TaskController(this.repository);
+
+  final TaskRepository repository;
   final RxList<TaskModel> taskList = <TaskModel>[].obs;
   final List<TaskModel> _sortedTasks = [];
   final List<TaskModel> _pendingTasks = [];
@@ -15,7 +17,6 @@ class TaskController extends GetxController {
   final Map<int, List<TaskModel>> _tasksByPriority = {};
   final Map<DateTime, List<TaskModel>> _tasksByDay = {};
 
-  late Box<TaskModel> taskBox;
   Timer? _overdueTimer;
 
   List<TaskModel> get sortedTasks => List.unmodifiable(_sortedTasks);
@@ -27,13 +28,12 @@ class TaskController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    taskBox = Hive.box<TaskModel>(BoxNames.tasks);
     getTasks();
     _startOverdueTimer();
   }
 
   void getTasks() {
-    taskList.value = taskBox.values.toList();
+    taskList.value = repository.getAll();
     _rebuildCaches();
     update(['task_list', 'quadrant', 'calendar']);
     unawaited(_applyOverdueMoodPenalties());
@@ -59,7 +59,7 @@ class TaskController extends GetxController {
       focusTargetMinutes: focusTargetMinutes,
     );
 
-    await taskBox.put(task.id, task);
+    await repository.put(task);
     taskList.add(task);
     _rebuildCaches();
     update(['task_list', 'quadrant', 'calendar']);
@@ -78,14 +78,14 @@ class TaskController extends GetxController {
   }
 
   Future<void> updateTask(TaskModel task) async {
-    await task.save();
+    await repository.save(task);
     _rebuildCaches();
     update(['task_${task.id}', 'task_list', 'quadrant', 'calendar']);
     await _applyOverdueMoodPenalties();
   }
 
   Future<void> deleteTask(TaskModel task) async {
-    await task.delete();
+    await repository.delete(task);
     taskList.remove(task);
     _rebuildCaches();
     update(['task_list', 'quadrant', 'calendar']);
@@ -94,7 +94,7 @@ class TaskController extends GetxController {
   Future<void> updateTaskStatus(TaskModel task) async {
     final wasCompleted = task.isCompleted;
     task.isCompleted = !task.isCompleted;
-    await task.save();
+    await repository.save(task);
     if (!wasCompleted && task.isCompleted) {
       if (Get.isRegistered<RewardController>()) {
         final reward = await Get.find<RewardController>().awardTaskCompletion(
@@ -194,7 +194,7 @@ class TaskController extends GetxController {
 
     for (final task in overdueTasks) {
       task.overdueMoodPenaltyApplied = true;
-      await task.save();
+      await repository.save(task);
     }
 
     await Get.find<PetController>().remindOverdueTasks(

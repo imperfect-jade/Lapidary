@@ -1,19 +1,19 @@
 import 'dart:math';
 
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
-import 'package:todolist/data/hive/box_names.dart';
+import 'package:todolist/data/repositories/reward_repository.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
 import 'package:todolist/model/reward/reward_wallet.dart';
 import 'package:todolist/model/task/task.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
 
 class RewardController extends GetxController {
-  static const String walletKey = 'default_wallet';
+  RewardController(this.repository);
 
+  static const String walletKey = RewardRepository.walletKey;
+
+  final RewardRepository repository;
   final Rxn<RewardWalletModel> wallet = Rxn<RewardWalletModel>();
-
-  late Box<RewardWalletModel> rewardBox;
 
   int get points => wallet.value?.points ?? 0;
 
@@ -24,19 +24,11 @@ class RewardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    rewardBox = Hive.box<RewardWalletModel>(BoxNames.rewardWallet);
     _loadWallet();
   }
 
   Future<void> _loadWallet() async {
-    final savedWallet = rewardBox.get(walletKey);
-    if (savedWallet == null) {
-      final emptyWallet = RewardWalletModel.empty();
-      await rewardBox.put(walletKey, emptyWallet);
-      wallet.value = emptyWallet;
-      return;
-    }
-    wallet.value = savedWallet;
+    wallet.value = await repository.getWallet();
   }
 
   Future<int> awardPomodoro(PomodoroModel record) async {
@@ -130,7 +122,7 @@ class RewardController extends GetxController {
       return;
     }
 
-    await currentWallet.save();
+    await repository.save(currentWallet);
     wallet.refresh();
   }
 }

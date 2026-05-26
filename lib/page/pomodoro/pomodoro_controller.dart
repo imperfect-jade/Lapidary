@@ -1,13 +1,16 @@
 //番茄钟控制器
 import 'dart:async';
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
-import 'package:todolist/data/hive/box_names.dart';
+import 'package:todolist/data/repositories/pomodoro_repository.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
 import 'package:todolist/page/pet/reward_controller.dart';
 
 class PomodoroController extends GetxController {
+  PomodoroController(this.repository);
+
+  final PomodoroRepository repository;
+
   // ========== 状态变量 ==========
 
   // 计时状态
@@ -35,13 +38,10 @@ class PomodoroController extends GetxController {
   DateTime? _startTime;
   int _accumulatedSeconds = 0; // 累计当前计时秒数
 
-  // Hive Box
-  late Box<PomodoroModel> pomodoroBox;
   // 初始化
   @override
   void onInit() {
     super.onInit();
-    pomodoroBox = Hive.box<PomodoroModel>(BoxNames.pomodoros);
     _loadTodayStats();
   }
 
@@ -50,7 +50,7 @@ class PomodoroController extends GetxController {
     final today = DateTime.now();
     final todayStart = DateTime(today.year, today.month, today.day);
     // 过滤出今日完成的专注记录
-    final todayRecords = pomodoroBox.values.where(
+    final todayRecords = repository.getAll().where(
       (r) =>
           r.startTime.isAfter(todayStart) && r.type == 'focus' && r.isCompleted,
     );
@@ -194,7 +194,7 @@ class PomodoroController extends GetxController {
       type: mode,
     );
 
-    await pomodoroBox.put(record.id, record);
+    await repository.put(record);
     if (Get.isRegistered<PetController>()) {
       final petController = Get.find<PetController>();
       if (mode == 'focus') {

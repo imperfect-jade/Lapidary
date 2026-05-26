@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
 import 'package:todolist/data/hive/box_names.dart';
+import 'package:todolist/data/repositories/theme_settings_repository.dart';
 
 class AppThemePalette {
   final String key;
@@ -39,8 +39,8 @@ class AppFontOption {
 
 class ThemeController extends GetxController {
   static const String settingsBoxName = BoxNames.settings;
-  static const String themeKey = 'theme_key';
-  static const String bodyFontKey = 'body_font_key';
+  static const String themeKey = ThemeSettingsRepository.themeKey;
+  static const String bodyFontKey = ThemeSettingsRepository.bodyFontKey;
   static const String defaultThemeKey = 'green';
   static const String defaultBodyFontKey = 'harmony';
   static const String defaultBodyFontFamily = 'HarmonyOSSansSC';
@@ -98,18 +98,19 @@ class ThemeController extends GetxController {
   final currentThemeKey = defaultThemeKey.obs;
   final currentFontKey = defaultBodyFontKey.obs;
 
-  late Box settingsBox;
+  final ThemeSettingsRepository settingsRepository;
+
+  ThemeController(this.settingsRepository);
 
   @override
   void onInit() {
     super.onInit();
-    settingsBox = Hive.box(settingsBoxName);
-    final savedThemeKey = settingsBox.get(themeKey) as String?;
+    final savedThemeKey = settingsRepository.getThemeKey();
     if (savedThemeKey != null &&
         palettes.any((palette) => palette.key == savedThemeKey)) {
       currentThemeKey.value = savedThemeKey;
     }
-    final savedFontKey = settingsBox.get(bodyFontKey) as String?;
+    final savedFontKey = settingsRepository.getBodyFontKey();
     if (savedFontKey != null &&
         fontOptions.any((option) => option.key == savedFontKey)) {
       currentFontKey.value = savedFontKey;
@@ -133,7 +134,7 @@ class ThemeController extends GetxController {
     }
     currentThemeKey.value = key;
     applySystemUiOverlayStyle();
-    await settingsBox.put(themeKey, key);
+    await settingsRepository.setThemeKey(key);
   }
 
   AppFontOption get currentFont {
@@ -153,7 +154,7 @@ class ThemeController extends GetxController {
       return;
     }
     currentFontKey.value = key;
-    await settingsBox.put(bodyFontKey, key);
+    await settingsRepository.setBodyFontKey(key);
   }
 
   SystemUiOverlayStyle get systemUiOverlayStyle {

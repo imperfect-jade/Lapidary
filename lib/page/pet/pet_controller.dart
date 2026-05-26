@@ -1,8 +1,7 @@
 import 'dart:async';
 
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
-import 'package:todolist/data/hive/box_names.dart';
+import 'package:todolist/data/repositories/pet_repository.dart';
 import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
 import 'package:todolist/model/task/task.dart';
@@ -42,6 +41,8 @@ class PetFood {
 }
 
 class PetController extends GetxController {
+  PetController(this.repository);
+
   static const List<PetFood> shopFoods = [
     PetFood(
       species: PetSpecies.cat,
@@ -102,7 +103,7 @@ class PetController extends GetxController {
   final feedbackAction = PetAction.idle.obs;
   final overlayEvent = Rxn<PetOverlayEvent>();
 
-  late Box<PetModel> petBox;
+  final PetRepository repository;
   Timer? _stateTimer;
   Timer? _messageResetTimer;
 
@@ -123,22 +124,12 @@ class PetController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    petBox = Hive.box<PetModel>(BoxNames.pets);
     _loadPet();
     _startStateTimer();
   }
 
   Future<void> _loadPet() async {
-    final savedPet = petBox.get('default_cat');
-    if (savedPet == null) {
-      final defaultPet = PetModel.defaultCat();
-      await petBox.put(defaultPet.id, defaultPet);
-      pet.value = defaultPet;
-      message.value = _statusMessage(defaultPet);
-      return;
-    }
-
-    pet.value = savedPet;
+    pet.value = await repository.getDefaultPet();
     await refreshPetState();
   }
 
@@ -449,7 +440,7 @@ class PetController extends GetxController {
       return;
     }
 
-    await currentPet.save();
+    await repository.save(currentPet);
     pet.refresh();
   }
 

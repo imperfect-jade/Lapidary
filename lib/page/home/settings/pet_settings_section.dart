@@ -1,7 +1,13 @@
-part of '../home.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/constants/theme.dart';
+import 'package:todolist/model/pet/pet.dart';
+import 'package:todolist/page/pet/pet_controller.dart';
 
-class _PetSettingsSection extends StatelessWidget {
-  const _PetSettingsSection();
+import 'pet_name_dialog.dart';
+
+class HomePetSettingsSection extends StatelessWidget {
+  const HomePetSettingsSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +27,7 @@ class _PetSettingsSection extends StatelessWidget {
             children: [
               _PetNameEditor(
                 name: pet?.name ?? '小云',
-                onEdit: () => _showPetNameDialog(petController, pet?.name),
+                onEdit: () => showPetNameDialog(petController, pet?.name),
               ),
               const SizedBox(height: 12),
               Row(

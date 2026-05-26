@@ -1,9 +1,18 @@
-part of '../home.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/constants/theme.dart';
+import 'package:todolist/page/home/home_controller.dart';
 
-class _AppDrawer extends StatelessWidget {
+import '../dialogs/about_dialog.dart';
+import '../dialogs/version_dialog.dart';
+import '../guide/user_guide_page.dart';
+import '../sheets/pet_settings_sheet.dart';
+import '../sheets/settings_sheet.dart';
+
+class HomeAppDrawer extends StatelessWidget {
   final HomeController homeController;
 
-  const _AppDrawer({required this.homeController});
+  const HomeAppDrawer({super.key, required this.homeController});
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +43,7 @@ class _AppDrawer extends StatelessWidget {
               title: const Text('设置'),
               onTap: () {
                 Get.back();
-                _showSettingsSheet();
+                showHomeSettingsSheet();
               },
             ),
             ListTile(
@@ -42,7 +51,7 @@ class _AppDrawer extends StatelessWidget {
               title: const Text('宠物'),
               onTap: () {
                 Get.back();
-                _showPetSettingsSheet();
+                showHomePetSettingsSheet();
               },
             ),
             ListTile(
@@ -50,7 +59,7 @@ class _AppDrawer extends StatelessWidget {
               title: const Text('使用指南'),
               onTap: () {
                 Get.back();
-                Get.to(() => const _UserGuidePage());
+                Get.to(() => const UserGuidePage());
               },
             ),
             ListTile(
@@ -58,7 +67,7 @@ class _AppDrawer extends StatelessWidget {
               title: const Text('关于琢玉'),
               onTap: () {
                 Get.back();
-                _showAboutDialog();
+                showHomeAboutDialog();
               },
             ),
             ListTile(
@@ -66,7 +75,7 @@ class _AppDrawer extends StatelessWidget {
               title: const Text('版本信息'),
               onTap: () {
                 Get.back();
-                _showVersionDialog();
+                showHomeVersionDialog();
               },
             ),
           ],

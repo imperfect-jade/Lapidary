@@ -1,7 +1,9 @@
-part of '../home.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/constants/theme.dart';
 
-class _FontSettingsSection extends StatelessWidget {
-  const _FontSettingsSection();
+class HomeFontSettingsSection extends StatelessWidget {
+  const HomeFontSettingsSection({super.key});
 
   @override
   Widget build(BuildContext context) {

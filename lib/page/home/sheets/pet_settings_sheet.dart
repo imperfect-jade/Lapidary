@@ -1,6 +1,8 @@
-part of '../home.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/page/home/settings/pet_settings_section.dart';
 
-void _showPetSettingsSheet() {
+void showHomePetSettingsSheet() {
   Get.bottomSheet(
     Container(
       padding: const EdgeInsets.all(20),
@@ -18,7 +20,7 @@ void _showPetSettingsSheet() {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 18),
-            _PetSettingsSection(),
+            HomePetSettingsSection(),
             SizedBox(height: 8),
           ],
         ),

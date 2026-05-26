@@ -1,6 +1,9 @@
-part of '../home.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/page/home/settings/font_settings_section.dart';
+import 'package:todolist/page/home/settings/theme_settings_section.dart';
 
-void _showSettingsSheet() {
+void showHomeSettingsSheet() {
   Get.bottomSheet(
     Container(
       width: double.infinity,
@@ -19,9 +22,9 @@ void _showSettingsSheet() {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 18),
-            _ThemeSettingsSection(),
+            HomeThemeSettingsSection(),
             SizedBox(height: 18),
-            _FontSettingsSection(),
+            HomeFontSettingsSection(),
             SizedBox(height: 8),
           ],
         ),

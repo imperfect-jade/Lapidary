@@ -1,6 +1,7 @@
-part of '../home.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
-void _showAboutDialog() {
+void showHomeAboutDialog() {
   Get.dialog(
     AlertDialog(
       title: const Text('关于琢玉'),

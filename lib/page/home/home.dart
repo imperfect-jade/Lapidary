@@ -1,27 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:todolist/constants/theme.dart';
-import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/page/calendar/calendar.dart';
+import 'package:todolist/page/home/drawer/app_drawer.dart';
+import 'package:todolist/page/home/home_controller.dart';
 import 'package:todolist/page/pet/pet.dart';
-import 'package:todolist/page/pet/pet_controller.dart';
 import 'package:todolist/page/pet/widgets/pet_global_feedback_overlay.dart';
 import 'package:todolist/page/pomodoro/pomodoro.dart';
 import 'package:todolist/page/quadrant/quadrant.dart';
 import 'package:todolist/page/task/task.dart';
-import 'package:todolist/page/home/home_controller.dart';
-
-part 'dialogs/version_dialog.dart';
-part 'dialogs/about_dialog.dart';
-part 'drawer/app_drawer.dart';
-part 'guide/user_guide_page.dart';
-part 'settings/pet_name_dialog.dart';
-part 'settings/pet_settings_section.dart';
-part 'settings/font_settings_section.dart';
-part 'settings/theme_settings_section.dart';
-part 'sheets/pet_settings_sheet.dart';
-part 'sheets/settings_sheet.dart';
 
 //主页
 class HomePage extends StatelessWidget {
@@ -63,7 +50,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: _AppDrawer(homeController: controller),
+      drawer: HomeAppDrawer(homeController: controller),
       body: SafeArea(
         child: Builder(
           builder: (context) {

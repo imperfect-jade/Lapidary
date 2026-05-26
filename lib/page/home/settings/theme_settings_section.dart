@@ -1,7 +1,9 @@
-part of '../home.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/constants/theme.dart';
 
-class _ThemeSettingsSection extends StatelessWidget {
-  const _ThemeSettingsSection();
+class HomeThemeSettingsSection extends StatelessWidget {
+  const HomeThemeSettingsSection({super.key});
 
   @override
   Widget build(BuildContext context) {

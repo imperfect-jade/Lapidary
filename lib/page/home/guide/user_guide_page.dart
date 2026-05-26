@@ -1,7 +1,8 @@
-part of '../home.dart';
+import 'package:flutter/material.dart';
+import 'package:todolist/constants/theme.dart';
 
-class _UserGuidePage extends StatelessWidget {
-  const _UserGuidePage();
+class UserGuidePage extends StatelessWidget {
+  const UserGuidePage({super.key});
 
   @override
   Widget build(BuildContext context) {

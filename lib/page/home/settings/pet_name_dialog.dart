@@ -1,6 +1,8 @@
-part of '../home.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/page/pet/pet_controller.dart';
 
-void _showPetNameDialog(PetController petController, String? currentName) {
+void showPetNameDialog(PetController petController, String? currentName) {
   final nameController = TextEditingController(text: currentName ?? '');
   Get.dialog(
     AlertDialog(

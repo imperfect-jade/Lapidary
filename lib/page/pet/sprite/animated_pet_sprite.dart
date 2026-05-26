@@ -12,16 +12,13 @@ class _AnimatedPetSprite extends StatefulWidget {
 
 class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
     with TickerProviderStateMixin {
-  static const String _catSpecPath = 'lib/assets/images/pet/cat_hatch_pet.json';
-  static const String _dogSpecPath = 'lib/assets/images/pet/dog_hatch_pet.json';
-
   late final AnimationController _idleController;
   late final AnimationController _moveController;
   Worker? _actionWorker;
   Timer? _frameTimer;
   Timer? _behaviorTimer;
   ui.Image? _spriteImage;
-  _PetSpriteSpec? _spriteSpec;
+  PetSpriteSpec? _spriteSpec;
   bool _spriteLoadFailed = false;
   int _frameIndex = 0;
   bool _facingLeft = false;
@@ -30,8 +27,8 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
   double _moveStartFactor = 0;
   double _moveEndFactor = 0;
   final Random _random = Random();
-  _AmbientPetMotion _ambientMotion = _AmbientPetMotion.idle;
-  _SpriteActionKey _lastAction = _SpriteActionKey.idle;
+  AmbientPetMotion _ambientMotion = AmbientPetMotion.idle;
+  PetSpriteActionKey _lastAction = PetSpriteActionKey.idle;
   String? _loadedSpecies;
 
   @override
@@ -81,238 +78,44 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
     _moveController.removeStatusListener(_handleMoveStatus);
     _idleController.dispose();
     _moveController.dispose();
-    _spriteImage?.dispose();
     super.dispose();
   }
 
   Future<void> _loadSprite() async {
     final species = widget.pet.species;
     try {
-      await _loadSpriteWithSpec(species, await _spriteSpecForSpecies(species));
+      final cached = await PetSpriteCache.load(species);
+      _useCachedSprite(species, cached, const Size(184, 198));
     } catch (error) {
       debugPrint('Failed to load pet sprite: $error');
-      if (species == PetSpecies.dog) {
-        try {
-          await _loadSpriteWithSpec(species, _legacyDogSpec());
-          return;
-        } catch (fallbackError) {
-          debugPrint('Failed to load fallback dog sprite: $fallbackError');
-        }
-      } else {
-        try {
-          await _loadSpriteWithSpec(species, _legacyCatSpec());
-          return;
-        } catch (fallbackError) {
-          debugPrint('Failed to load fallback cat sprite: $fallbackError');
-        }
-      }
       if (mounted) {
         setState(() => _spriteLoadFailed = true);
       }
     }
   }
 
-  Future<void> _loadSpriteWithSpec(String species, _PetSpriteSpec spec) async {
-    final data = await rootBundle.load(spec.assetPath);
-    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
-    final frame = await codec.getNextFrame();
+  void _useCachedSprite(
+    String species,
+    CachedPetSprite cached,
+    Size displaySize,
+  ) {
     if (!mounted || widget.pet.species != species) {
-      frame.image.dispose();
       return;
     }
-    _spriteImage?.dispose();
+    final spec = cached.spec.copyWith(displaySize: displaySize);
     setState(() {
-      _spriteImage = frame.image;
+      _spriteImage = cached.image;
       _spriteSpec = spec;
       _spriteLoadFailed = false;
       _loadedSpecies = species;
       _frameIndex = 0;
-      _lastAction = _SpriteActionKey.idle;
+      _lastAction = PetSpriteActionKey.idle;
     });
-    _startFrameTimer(spec.animationFor(_SpriteActionKey.idle));
-  }
-
-  Future<_PetSpriteSpec> _spriteSpecForSpecies(String species) async {
-    if (species == PetSpecies.dog) {
-      return _jsonSpriteSpec(
-        specPath: _dogSpecPath,
-        displaySize: const Size(184, 198),
-        flipLeft: false,
-      );
-    }
-    return _jsonSpriteSpec(
-      specPath: _catSpecPath,
-      displaySize: const Size(184, 198),
-      flipLeft: false,
-    );
-  }
-
-  Future<_PetSpriteSpec> _jsonSpriteSpec({
-    required String specPath,
-    required Size displaySize,
-    required bool flipLeft,
-  }) async {
-    final raw = await rootBundle.loadString(specPath);
-    final json = jsonDecode(raw) as Map<String, dynamic>;
-    final actions = (json['actions'] as Map).cast<String, dynamic>();
-    return _PetSpriteSpec(
-      assetPath: 'lib/assets/images/pet/${json['image']}',
-      frameWidth: (json['frameWidth'] as num).toInt(),
-      frameHeight: (json['frameHeight'] as num).toInt(),
-      displaySize: displaySize,
-      flipLeft: flipLeft,
-      actions: {
-        _SpriteActionKey.idle: _animationFrom(actions, 'idle'),
-        _SpriteActionKey.runningRight: _animationFrom(actions, 'runningRight'),
-        _SpriteActionKey.runningLeft: _animationFrom(actions, 'runningLeft'),
-        _SpriteActionKey.pet: _animationFrom(actions, 'pet'),
-        _SpriteActionKey.feed: _animationFrom(actions, 'feed'),
-        _SpriteActionKey.sleep: _animationFrom(actions, 'sleep'),
-        _SpriteActionKey.taskComplete: _animationFromOr(
-          actions,
-          'taskComplete',
-          'jumping',
-        ),
-        _SpriteActionKey.overdue: _animationFromOr(
-          actions,
-          'overdue',
-          'waiting',
-        ),
-        _SpriteActionKey.jumping: _animationFromOr(actions, 'jumping', 'pet'),
-        _SpriteActionKey.waiting: _animationFromOr(actions, 'waiting', 'idle'),
-        _SpriteActionKey.running: _animationFromOr(
-          actions,
-          'running',
-          'runningRight',
-        ),
-      },
-    );
-  }
-
-  static _SpriteAnimationSpec _animationFrom(
-    Map<String, dynamic> actions,
-    String key,
-  ) {
-    return _SpriteAnimationSpec.fromJson(
-      (actions[key] as Map).cast<String, dynamic>(),
-    );
-  }
-
-  static _SpriteAnimationSpec _animationFromOr(
-    Map<String, dynamic> actions,
-    String key,
-    String fallbackKey,
-  ) {
-    final animation = actions[key] ?? actions[fallbackKey];
-    return _SpriteAnimationSpec.fromJson(
-      (animation as Map).cast<String, dynamic>(),
-    );
-  }
-
-  static _PetSpriteSpec _legacyDogSpec() {
-    return const _PetSpriteSpec(
-      assetPath: 'lib/assets/images/pet/dog_spritesheet.png',
-      frameWidth: 128,
-      frameHeight: 128,
-      displaySize: Size(176, 176),
-      flipLeft: true,
-      actions: {
-        _SpriteActionKey.idle: _SpriteAnimationSpec(row: 0, frames: 4, fps: 6),
-        _SpriteActionKey.runningRight: _SpriteAnimationSpec(
-          row: 1,
-          frames: 4,
-          fps: 7,
-        ),
-        _SpriteActionKey.runningLeft: _SpriteAnimationSpec(
-          row: 1,
-          frames: 4,
-          fps: 7,
-        ),
-        _SpriteActionKey.pet: _SpriteAnimationSpec(row: 2, frames: 4, fps: 7),
-        _SpriteActionKey.feed: _SpriteAnimationSpec(row: 3, frames: 4, fps: 7),
-        _SpriteActionKey.sleep: _SpriteAnimationSpec(row: 4, frames: 4, fps: 4),
-        _SpriteActionKey.taskComplete: _SpriteAnimationSpec(
-          row: 2,
-          frames: 4,
-          fps: 7,
-        ),
-        _SpriteActionKey.overdue: _SpriteAnimationSpec(
-          row: 0,
-          frames: 4,
-          fps: 5,
-        ),
-        _SpriteActionKey.jumping: _SpriteAnimationSpec(
-          row: 2,
-          frames: 4,
-          fps: 7,
-        ),
-        _SpriteActionKey.waiting: _SpriteAnimationSpec(
-          row: 0,
-          frames: 4,
-          fps: 5,
-        ),
-        _SpriteActionKey.running: _SpriteAnimationSpec(
-          row: 1,
-          frames: 4,
-          fps: 7,
-        ),
-      },
-    );
-  }
-
-  static _PetSpriteSpec _legacyCatSpec() {
-    return const _PetSpriteSpec(
-      assetPath: 'lib/assets/images/pet/cat_orange_spritesheet.png',
-      frameWidth: 128,
-      frameHeight: 128,
-      displaySize: Size(176, 176),
-      flipLeft: true,
-      actions: {
-        _SpriteActionKey.idle: _SpriteAnimationSpec(row: 0, frames: 4, fps: 6),
-        _SpriteActionKey.runningRight: _SpriteAnimationSpec(
-          row: 1,
-          frames: 4,
-          fps: 7,
-        ),
-        _SpriteActionKey.runningLeft: _SpriteAnimationSpec(
-          row: 1,
-          frames: 4,
-          fps: 7,
-        ),
-        _SpriteActionKey.pet: _SpriteAnimationSpec(row: 2, frames: 4, fps: 7),
-        _SpriteActionKey.feed: _SpriteAnimationSpec(row: 3, frames: 4, fps: 7),
-        _SpriteActionKey.sleep: _SpriteAnimationSpec(row: 4, frames: 4, fps: 4),
-        _SpriteActionKey.taskComplete: _SpriteAnimationSpec(
-          row: 2,
-          frames: 4,
-          fps: 7,
-        ),
-        _SpriteActionKey.overdue: _SpriteAnimationSpec(
-          row: 0,
-          frames: 4,
-          fps: 5,
-        ),
-        _SpriteActionKey.jumping: _SpriteAnimationSpec(
-          row: 2,
-          frames: 4,
-          fps: 7,
-        ),
-        _SpriteActionKey.waiting: _SpriteAnimationSpec(
-          row: 0,
-          frames: 4,
-          fps: 5,
-        ),
-        _SpriteActionKey.running: _SpriteAnimationSpec(
-          row: 1,
-          frames: 4,
-          fps: 7,
-        ),
-      },
-    );
+    _startFrameTimer(spec.animationFor(PetSpriteActionKey.idle));
   }
 
   void _startFrameTimer(
-    _SpriteAnimationSpec animation, {
+    PetSpriteAnimationSpec animation, {
     bool holdLastFrame = false,
   }) {
     _frameTimer?.cancel();
@@ -348,20 +151,20 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
     if (!mounted || widget.pet.isSleeping) {
       return;
     }
-    setState(() => _ambientMotion = _AmbientPetMotion.idle);
+    setState(() => _ambientMotion = AmbientPetMotion.idle);
     _scheduleNextBehavior();
   }
 
   void _syncFrameAction(
-    _SpriteActionKey action,
-    _SpriteAnimationSpec animation,
+    PetSpriteActionKey action,
+    PetSpriteAnimationSpec animation,
   ) {
     if (_lastAction != action) {
       _lastAction = action;
       _frameIndex = 0;
       _startFrameTimer(
         animation,
-        holdLastFrame: action == _SpriteActionKey.sleep,
+        holdLastFrame: action == PetSpriteActionKey.sleep,
       );
     }
   }
@@ -387,7 +190,7 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
       _captureCurrentPosition();
       _moveController.stop();
       _moveController.reset();
-      _setAmbientMotion(_AmbientPetMotion.idle);
+      _setAmbientMotion(AmbientPetMotion.idle);
       return;
     }
     if (action == PetAction.idle &&
@@ -403,18 +206,18 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
     _positionFactor = 0;
     _moveStartFactor = 0;
     _moveEndFactor = 0;
-    _lastAction = _SpriteActionKey.idle;
+    _lastAction = PetSpriteActionKey.idle;
     _frameIndex = 0;
     if (mounted) {
-      setState(() => _ambientMotion = _AmbientPetMotion.idle);
+      setState(() => _ambientMotion = AmbientPetMotion.idle);
     }
   }
 
   void _exitSleepMode() {
-    _lastAction = _SpriteActionKey.idle;
+    _lastAction = PetSpriteActionKey.idle;
     _frameIndex = 0;
     if (mounted) {
-      setState(() => _ambientMotion = _AmbientPetMotion.idle);
+      setState(() => _ambientMotion = AmbientPetMotion.idle);
     }
     _scheduleNextBehavior(initial: true);
   }
@@ -443,21 +246,21 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
 
     final roll = _random.nextDouble();
     if (roll < 0.55) {
-      _setAmbientMotion(_AmbientPetMotion.idle);
+      _setAmbientMotion(AmbientPetMotion.idle);
       _scheduleNextBehavior();
     } else if (roll < 0.75) {
       _playAmbientFor(
-        _AmbientPetMotion.waiting,
+        AmbientPetMotion.waiting,
         const Duration(milliseconds: 2600),
       );
     } else if (roll < 0.85) {
       _playAmbientFor(
-        _AmbientPetMotion.jumping,
+        AmbientPetMotion.jumping,
         const Duration(milliseconds: 900),
       );
     } else if (roll < 0.90) {
       _playAmbientFor(
-        _AmbientPetMotion.runningInPlace,
+        AmbientPetMotion.runningInPlace,
         const Duration(milliseconds: 1200),
       );
     } else {
@@ -465,14 +268,14 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
     }
   }
 
-  void _setAmbientMotion(_AmbientPetMotion motion) {
+  void _setAmbientMotion(AmbientPetMotion motion) {
     if (!mounted || _ambientMotion == motion) {
       return;
     }
     setState(() => _ambientMotion = motion);
   }
 
-  void _playAmbientFor(_AmbientPetMotion motion, Duration duration) {
+  void _playAmbientFor(AmbientPetMotion motion, Duration duration) {
     _behaviorTimer?.cancel();
     _captureCurrentPosition();
     _moveController.stop();
@@ -482,7 +285,7 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
       if (!mounted || widget.pet.isSleeping) {
         return;
       }
-      _setAmbientMotion(_AmbientPetMotion.idle);
+      _setAmbientMotion(AmbientPetMotion.idle);
       _scheduleNextBehavior();
     });
   }
@@ -501,8 +304,8 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
     setState(() {
       _facingLeft = toLeft;
       _ambientMotion = toLeft
-          ? _AmbientPetMotion.runLeft
-          : _AmbientPetMotion.runRight;
+          ? AmbientPetMotion.runLeft
+          : AmbientPetMotion.runRight;
     });
     _moveController.forward(from: 0);
   }
@@ -517,35 +320,35 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
         _positionFactor;
   }
 
-  _SpriteActionKey _resolveSpriteAction(PetAction action) {
+  PetSpriteActionKey _resolveSpriteAction(PetAction action) {
     if (action == PetAction.taskComplete) {
-      return _SpriteActionKey.taskComplete;
+      return PetSpriteActionKey.taskComplete;
     }
     if (widget.pet.isSleeping) {
-      return _SpriteActionKey.sleep;
+      return PetSpriteActionKey.sleep;
     }
     if (action == PetAction.pet) {
-      return _SpriteActionKey.pet;
+      return PetSpriteActionKey.pet;
     }
     if (action == PetAction.feed) {
-      return _SpriteActionKey.feed;
+      return PetSpriteActionKey.feed;
     }
     if (action == PetAction.overdue) {
-      return _SpriteActionKey.overdue;
+      return PetSpriteActionKey.overdue;
     }
     switch (_ambientMotion) {
-      case _AmbientPetMotion.runRight:
-        return _SpriteActionKey.runningRight;
-      case _AmbientPetMotion.runLeft:
-        return _SpriteActionKey.runningLeft;
-      case _AmbientPetMotion.waiting:
-        return _SpriteActionKey.waiting;
-      case _AmbientPetMotion.jumping:
-        return _SpriteActionKey.jumping;
-      case _AmbientPetMotion.runningInPlace:
-        return _SpriteActionKey.running;
-      case _AmbientPetMotion.idle:
-        return _SpriteActionKey.idle;
+      case AmbientPetMotion.runRight:
+        return PetSpriteActionKey.runningRight;
+      case AmbientPetMotion.runLeft:
+        return PetSpriteActionKey.runningLeft;
+      case AmbientPetMotion.waiting:
+        return PetSpriteActionKey.waiting;
+      case AmbientPetMotion.jumping:
+        return PetSpriteActionKey.jumping;
+      case AmbientPetMotion.runningInPlace:
+        return PetSpriteActionKey.running;
+      case AmbientPetMotion.idle:
+        return PetSpriteActionKey.idle;
     }
   }
 

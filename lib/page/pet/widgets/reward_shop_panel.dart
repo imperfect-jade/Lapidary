@@ -20,8 +20,8 @@ class _RewardShopPanelState extends State<_RewardShopPanel> {
   Widget build(BuildContext context) {
     return Obx(() {
       final species = widget.petController.pet.value?.species ?? PetSpecies.cat;
-      final foods = PetController.foodsForSpecies(species);
-      final shopTitle = '${PetController.speciesLabel(species)}食物';
+      final foods = PetFoodCatalog.foodsForSpecies(species);
+      final shopTitle = '${PetFoodCatalog.speciesLabel(species)}食物';
 
       return Container(
         width: double.infinity,

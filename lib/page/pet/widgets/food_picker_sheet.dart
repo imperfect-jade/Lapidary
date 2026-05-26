@@ -19,7 +19,7 @@ class _FoodPickerSheet extends StatelessWidget {
       ),
       child: Obx(() {
         final species = petController.pet.value?.species ?? PetSpecies.cat;
-        final ownedFoods = PetController.foodsForSpecies(
+        final ownedFoods = PetFoodCatalog.foodsForSpecies(
           species,
         ).where((food) => rewardController.foodCount(food.name) > 0).toList();
 

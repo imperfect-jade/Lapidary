@@ -390,7 +390,7 @@ Widget _buildSectionTimeColumn(ScheduleSemesterModel semester, bool compact) {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  _sectionStartTime(semester, section),
+                  ScheduleTimeService.sectionStartTime(semester, section),
                   style: TextStyle(
                     fontSize: compact ? 9 : 10,
                     color: Colors.grey[700],
@@ -439,7 +439,7 @@ List<Widget> _buildScheduleCardsByDay(
   AppThemePalette palette,
   bool hideInformation,
 ) {
-  final blocks = _buildScheduleBlocks(sessions);
+  final blocks = ScheduleLayoutService.buildBlocks(sessions);
   return blocks
       .map(
         (block) => Positioned(
@@ -463,50 +463,6 @@ List<Widget> _buildScheduleCardsByDay(
       .toList();
 }
 
-List<_ScheduleBlock> _buildScheduleBlocks(List<ScheduleSessionModel> sessions) {
-  final validSessions = sessions.where((session) => session.time.isNotEmpty);
-  final blocks = <_ScheduleBlock>[];
-  for (final session in validSessions) {
-    var start = session.time.first;
-    var end = session.time.last;
-    final overlapping = blocks
-        .where((block) => !(block.end < start || end < block.start))
-        .toList();
-    for (final block in overlapping) {
-      if (block.start < start) {
-        start = block.start;
-      }
-      if (block.end > end) {
-        end = block.end;
-      }
-    }
-    blocks.removeWhere((block) => overlapping.contains(block));
-    blocks.add(_ScheduleBlock(start, end));
-  }
-  blocks.sort((a, b) => a.start.compareTo(b.start));
-  for (final block in blocks) {
-    final byId = <String, ScheduleSessionModel>{};
-    for (final session in validSessions) {
-      final start = session.time.first;
-      final end = session.time.last;
-      if (block.end < start || end < block.start) {
-        continue;
-      }
-      final key = session.id ?? '${session.name}_${session.dayOfWeek}_$start';
-      final existing = byId[key];
-      if (existing == null) {
-        byId[key] = session.copyWith(time: List<int>.from(session.time));
-      } else {
-        final timeSet = <int>{...existing.time, ...session.time}.toList()
-          ..sort();
-        byId[key] = existing.copyWith(time: timeSet);
-      }
-    }
-    block.sessions.addAll(byId.values);
-  }
-  return blocks;
-}
-
 String _shortHalfName(ScheduleSemesterModel semester, bool firstHalf) {
   final halfName = firstHalf ? semester.firstHalfName : semester.secondHalfName;
   if (halfName.isEmpty) {
@@ -515,93 +471,7 @@ String _shortHalfName(ScheduleSemesterModel semester, bool firstHalf) {
   return halfName;
 }
 
-String _sectionStartTime(ScheduleSemesterModel semester, int section) {
-  if (section >= semester.sessionToTimeMinutes.length ||
-      semester.sessionToTimeMinutes[section].isEmpty) {
-    return '--:--';
-  }
-  return _formatMinutes(semester.sessionToTimeMinutes[section].first);
-}
-
-String _formatMinutes(int minutes) {
-  final hour = minutes ~/ 60;
-  final minute = minutes % 60;
-  return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
-}
-
-Color _scheduleColorForSession(
-  ScheduleSessionModel session,
-  AppThemePalette palette,
-) {
-  final hash = (session.id ?? session.name).hashCode.abs();
-  final selected = HSLColor.fromColor(palette.selectedColor);
-  final appBar = HSLColor.fromColor(palette.appBarColor);
-  final lowSaturationTheme =
-      selected.saturation < 0.22 && appBar.saturation < 0.22;
-  final isDarkTheme =
-      palette.key == 'dark' ||
-      ThemeData.estimateBrightnessForColor(palette.primaryColor) ==
-          Brightness.dark;
-  final seed = HSLColor.fromColor(_scheduleThemeSeedColor(palette));
-  const hueOffsets = [-28.0, -16.0, -6.0, 6.0, 16.0, 28.0, 40.0];
-  final variant = (hash ~/ hueOffsets.length) % 3;
-  final hue = _wrapScheduleHue(seed.hue + hueOffsets[hash % hueOffsets.length]);
-  final saturationBase = lowSaturationTheme
-      ? (isDarkTheme ? 0.28 : 0.32)
-      : (selected.saturation * 0.46 + appBar.saturation * 0.18 + 0.22);
-  final saturation = (saturationBase + variant * 0.025)
-      .clamp(0.28, 0.48)
-      .toDouble();
-  final lightness = _scheduleLightnessForPalette(palette, variant);
-  return HSLColor.fromAHSL(1, hue, saturation, lightness).toColor();
-}
-
-Color _scheduleThemeSeedColor(AppThemePalette palette) {
-  final selected = HSLColor.fromColor(palette.selectedColor);
-  final appBar = HSLColor.fromColor(palette.appBarColor);
-  if (selected.saturation >= 0.22) {
-    return palette.selectedColor;
-  }
-  if (appBar.saturation >= 0.22) {
-    return palette.appBarColor;
-  }
-
-  return switch (palette.key) {
-    'light' => const Color(0xFF6F96A6),
-    'dark' => const Color(0xFF626FA8),
-    _ => palette.selectedColor,
-  };
-}
-
-double _scheduleLightnessForPalette(AppThemePalette palette, int variant) {
-  if (palette.key == 'dark') {
-    return (0.42 + variant * 0.035).clamp(0.42, 0.50).toDouble();
-  }
-  if (palette.key == 'light') {
-    return (0.66 + variant * 0.025).clamp(0.66, 0.72).toDouble();
-  }
-  final isDarkTheme =
-      ThemeData.estimateBrightnessForColor(palette.primaryColor) ==
-      Brightness.dark;
-  if (isDarkTheme) {
-    return (0.44 + variant * 0.035).clamp(0.44, 0.52).toDouble();
-  }
-  return (0.60 + variant * 0.03).clamp(0.60, 0.68).toDouble();
-}
-
-double _wrapScheduleHue(double hue) {
-  return (hue % 360 + 360) % 360;
-}
-
 enum _ScheduleToolbarAction { addSession, createSemester }
-
-class _ScheduleBlock {
-  final int start;
-  final int end;
-  final List<ScheduleSessionModel> sessions = [];
-
-  _ScheduleBlock(this.start, this.end);
-}
 
 class _ScheduleCourseCard extends StatelessWidget {
   final List<ScheduleSessionModel> sessions;
@@ -621,7 +491,7 @@ class _ScheduleCourseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firstSession = sessions.first;
-    final color = _scheduleColorForSession(firstSession, palette);
+    final color = ScheduleColorService.colorForSession(firstSession, palette);
     final foreground =
         ThemeData.estimateBrightnessForColor(color) == Brightness.dark
         ? Colors.white

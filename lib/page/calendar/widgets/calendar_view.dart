@@ -91,7 +91,7 @@ Widget _buildCalendarMarkers(List<Object> events, AppThemePalette palette) {
 
 Color _calendarMarkerColor(Object event, AppThemePalette palette) {
   if (event is ScheduleSessionModel) {
-    return _scheduleColorForSession(event, palette);
+    return ScheduleColorService.colorForSession(event, palette);
   }
   if (event is TaskModel) {
     return CalendarPage._priorityColors[event.priority] ?? Colors.grey;

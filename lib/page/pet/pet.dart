@@ -1,20 +1,22 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:todolist/constants/theme.dart';
+import 'package:todolist/features/pet/domain/pet_action.dart';
+import 'package:todolist/features/pet/domain/pet_food.dart';
+import 'package:todolist/features/pet/domain/pet_overlay_event.dart';
+import 'package:todolist/features/pet/services/pet_food_catalog.dart';
+import 'package:todolist/features/pet/sprite/pet_sprite_cache.dart';
+import 'package:todolist/features/pet/sprite/pet_sprite_models.dart';
 import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
 import 'package:todolist/page/pet/reward_controller.dart';
 
 part 'sprite/animated_pet_sprite.dart';
 part 'sprite/sprite_feedback.dart';
-part 'sprite/sprite_models.dart';
-part 'sprite/pet_sprite_cache.dart';
 part 'sprite/sprite_placeholder.dart';
 part 'sprite/sprite_sheet_painter.dart';
 part 'widgets/action_bar.dart';

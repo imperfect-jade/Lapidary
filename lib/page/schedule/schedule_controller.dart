@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:todolist/data/hive/box_names.dart';
 import 'package:todolist/data/repositories/schedule_repository.dart';
+import 'package:todolist/features/schedule/services/schedule_date_service.dart';
 import 'package:todolist/model/schedule/schedule.dart';
 
 enum CalendarContentView { month, schedule }
@@ -86,7 +87,7 @@ class ScheduleController extends GetxController {
     final semester = ScheduleSemesterModel(
       id: id,
       name: name,
-      dayOfWeekToDays: _buildDayOfWeekToDays(
+      dayOfWeekToDays: ScheduleDateService.buildDayOfWeekToDays(
         firstHalfStart: firstHalfStart,
         firstHalfEnd: firstHalfEnd,
         secondHalfStart: secondHalfStart,
@@ -141,38 +142,5 @@ class ScheduleController extends GetxController {
     await repository.put(semester);
     loadSemesters();
     semesters.refresh();
-  }
-
-  List<List<List<List<DateTime>>>> _buildDayOfWeekToDays({
-    required DateTime firstHalfStart,
-    required DateTime firstHalfEnd,
-    required DateTime secondHalfStart,
-    required DateTime secondHalfEnd,
-  }) {
-    final result = ScheduleSemesterModel.emptyDayOfWeekToDays();
-    _fillHalfDays(firstHalfStart, firstHalfEnd, result[0]);
-    _fillHalfDays(secondHalfStart, secondHalfEnd, result[1]);
-    return result;
-  }
-
-  void _fillHalfDays(
-    DateTime start,
-    DateTime end,
-    List<List<List<DateTime>>> target,
-  ) {
-    var weekday = start.weekday;
-    var oddEvenWeek = 0;
-    for (
-      var day = start;
-      !day.isAfter(end);
-      day = day.add(const Duration(days: 1))
-    ) {
-      target[oddEvenWeek][weekday].add(day);
-      weekday++;
-      if (weekday == 8) {
-        weekday = 1;
-        oddEvenWeek = 1 - oddEvenWeek;
-      }
-    }
   }
 }

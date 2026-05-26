@@ -6,6 +6,9 @@ import 'package:todolist/data/repositories/reward_repository.dart';
 import 'package:todolist/data/repositories/schedule_repository.dart';
 import 'package:todolist/data/repositories/task_repository.dart';
 import 'package:todolist/data/repositories/theme_settings_repository.dart';
+import 'package:todolist/features/pet/services/pet_feedback_service.dart';
+import 'package:todolist/features/pet/services/pet_message_service.dart';
+import 'package:todolist/features/pet/services/pet_state_service.dart';
 import 'package:todolist/page/calendar/calendar_controller.dart';
 import 'package:todolist/page/home/home_controller.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
@@ -21,10 +24,20 @@ void registerAppControllers() {
   _putDependency(() => RewardRepository());
   _putDependency(() => PomodoroRepository());
   _putDependency(() => ScheduleRepository());
+  _putDependency(() => PetStateService());
+  _putDependency(() => PetMessageService());
+  _putDependency(() => PetFeedbackService());
 
   _putController(() => ThemeController(Get.find<ThemeSettingsRepository>()));
   _putController(() => RewardController(Get.find<RewardRepository>()));
-  _putController(() => PetController(Get.find<PetRepository>()));
+  _putController(
+    () => PetController(
+      Get.find<PetRepository>(),
+      Get.find<PetStateService>(),
+      Get.find<PetMessageService>(),
+      Get.find<PetFeedbackService>(),
+    ),
+  );
   _putController(() => TaskController(Get.find<TaskRepository>()));
   _putController(() => PomodoroController(Get.find<PomodoroRepository>()));
   _putController(() => CalendarController());

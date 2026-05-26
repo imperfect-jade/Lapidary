@@ -82,7 +82,7 @@ Widget _buildScheduleSessionCalendarCard(
   ScheduleSessionModel session,
   AppThemePalette palette,
 ) {
-  final color = _scheduleColorForSession(session, palette);
+  final color = ScheduleColorService.colorForSession(session, palette);
   final timeRange = _scheduleSessionTimeRange(semester, session);
   final location = _scheduleValueOrFallback(session.location);
 

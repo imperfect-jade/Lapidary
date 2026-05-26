@@ -10,15 +10,15 @@ class PetFocusCompanionCard extends StatefulWidget {
 }
 
 class _PetFocusCompanionCardState extends State<PetFocusCompanionCard> {
-  static const List<_SpriteActionKey> _randomActions = [
-    _SpriteActionKey.pet,
-    _SpriteActionKey.waiting,
-    _SpriteActionKey.feed,
+  static const List<PetSpriteActionKey> _randomActions = [
+    PetSpriteActionKey.pet,
+    PetSpriteActionKey.waiting,
+    PetSpriteActionKey.feed,
   ];
 
   final Random _random = Random();
   Timer? _behaviorTimer;
-  _SpriteActionKey _currentAction = _SpriteActionKey.idle;
+  PetSpriteActionKey _currentAction = PetSpriteActionKey.idle;
 
   @override
   void initState() {
@@ -50,16 +50,16 @@ class _PetFocusCompanionCardState extends State<PetFocusCompanionCard> {
       if (!mounted) {
         return;
       }
-      setState(() => _currentAction = _SpriteActionKey.idle);
+      setState(() => _currentAction = PetSpriteActionKey.idle);
       _scheduleNextAction();
     });
   }
 
-  Duration _durationFor(_SpriteActionKey action) {
+  Duration _durationFor(PetSpriteActionKey action) {
     return switch (action) {
-      _SpriteActionKey.pet => const Duration(milliseconds: 1200),
-      _SpriteActionKey.feed => const Duration(milliseconds: 1400),
-      _SpriteActionKey.waiting => const Duration(milliseconds: 1800),
+      PetSpriteActionKey.pet => const Duration(milliseconds: 1200),
+      PetSpriteActionKey.feed => const Duration(milliseconds: 1400),
+      PetSpriteActionKey.waiting => const Duration(milliseconds: 1800),
       _ => const Duration(milliseconds: 1400),
     };
   }

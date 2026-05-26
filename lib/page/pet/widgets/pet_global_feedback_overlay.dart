@@ -198,7 +198,7 @@ class _PetOverlayCard extends StatelessWidget {
 class _MiniPetSprite extends StatefulWidget {
   final PetController controller;
   final PetAction action;
-  final _SpriteActionKey? spriteAction;
+  final PetSpriteActionKey? spriteAction;
 
   const _MiniPetSprite({
     super.key,
@@ -214,9 +214,9 @@ class _MiniPetSprite extends StatefulWidget {
 class _MiniPetSpriteState extends State<_MiniPetSprite> {
   Timer? _frameTimer;
   int _frameIndex = 0;
-  _CachedPetSprite? _sprite;
+  CachedPetSprite? _sprite;
   bool _loadFailed = false;
-  _SpriteActionKey? _lastAction;
+  PetSpriteActionKey? _lastAction;
 
   @override
   void initState() {
@@ -251,7 +251,7 @@ class _MiniPetSpriteState extends State<_MiniPetSprite> {
   Future<void> _loadSprite() async {
     try {
       final species = widget.controller.pet.value?.species ?? PetSpecies.cat;
-      final sprite = await _PetSpriteCache.load(species);
+      final sprite = await PetSpriteCache.load(species);
       if (!mounted) {
         return;
       }
@@ -292,15 +292,15 @@ class _MiniPetSpriteState extends State<_MiniPetSprite> {
     });
   }
 
-  _SpriteActionKey _actionKeyFor(PetAction action) {
+  PetSpriteActionKey _actionKeyFor(PetAction action) {
     final spriteAction = widget.spriteAction;
     if (spriteAction != null) {
       return spriteAction;
     }
     if (action == PetAction.overdue) {
-      return _SpriteActionKey.overdue;
+      return PetSpriteActionKey.overdue;
     }
-    return _SpriteActionKey.taskComplete;
+    return PetSpriteActionKey.taskComplete;
   }
 
   @override

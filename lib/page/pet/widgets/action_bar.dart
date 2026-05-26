@@ -75,12 +75,12 @@ class _FoodInventoryLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final ownedFoods = PetController.foodsForSpecies(
+      final ownedFoods = PetFoodCatalog.foodsForSpecies(
         pet.species,
       ).where((food) => rewardController.foodCount(food.name) > 0).toList();
       if (ownedFoods.isEmpty) {
         return Text(
-          '库存：暂无适合${PetController.speciesLabel(pet.species)}的食物',
+          '库存：暂无适合${PetFoodCatalog.speciesLabel(pet.species)}的食物',
           style: const TextStyle(fontSize: 12, color: Colors.grey),
         );
       }

@@ -2,99 +2,23 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 import 'package:todolist/data/repositories/pet_repository.dart';
+import 'package:todolist/features/pet/domain/pet_action.dart';
+import 'package:todolist/features/pet/domain/pet_food.dart';
+import 'package:todolist/features/pet/domain/pet_overlay_event.dart';
+import 'package:todolist/features/pet/services/pet_feedback_service.dart';
+import 'package:todolist/features/pet/services/pet_message_service.dart';
+import 'package:todolist/features/pet/services/pet_state_service.dart';
 import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
 import 'package:todolist/model/task/task.dart';
 
-enum PetAction { idle, pet, feed, sleep, taskComplete, overdue }
-
-class PetOverlayEvent {
-  final String id;
-  final PetAction action;
-  final String message;
-  final DateTime createdAt;
-  final int moodDelta;
-
-  const PetOverlayEvent({
-    required this.id,
-    required this.action,
-    required this.message,
-    required this.createdAt,
-    required this.moodDelta,
-  });
-}
-
-class PetFood {
-  final String species;
-  final String name;
-  final int cost;
-  final int hungerBoost;
-  final int moodBoost;
-
-  const PetFood({
-    required this.species,
-    required this.name,
-    required this.cost,
-    required this.hungerBoost,
-    required this.moodBoost,
-  });
-}
-
 class PetController extends GetxController {
-  PetController(this.repository);
-
-  static const List<PetFood> shopFoods = [
-    PetFood(
-      species: PetSpecies.cat,
-      name: '小鱼干',
-      cost: 20,
-      hungerBoost: 12,
-      moodBoost: 4,
-    ),
-    PetFood(
-      species: PetSpecies.cat,
-      name: '猫罐头',
-      cost: 45,
-      hungerBoost: 28,
-      moodBoost: 10,
-    ),
-    PetFood(
-      species: PetSpecies.cat,
-      name: '豪华猫饭',
-      cost: 80,
-      hungerBoost: 45,
-      moodBoost: 18,
-    ),
-    PetFood(
-      species: PetSpecies.dog,
-      name: '小骨饼干',
-      cost: 20,
-      hungerBoost: 12,
-      moodBoost: 4,
-    ),
-    PetFood(
-      species: PetSpecies.dog,
-      name: '鸡肉狗粮',
-      cost: 45,
-      hungerBoost: 28,
-      moodBoost: 10,
-    ),
-    PetFood(
-      species: PetSpecies.dog,
-      name: '牛肉能量餐',
-      cost: 80,
-      hungerBoost: 45,
-      moodBoost: 18,
-    ),
-  ];
-
-  static List<PetFood> foodsForSpecies(String species) {
-    return shopFoods.where((food) => food.species == species).toList();
-  }
-
-  static String speciesLabel(String species) {
-    return species == PetSpecies.dog ? '小狗' : '小猫';
-  }
+  PetController(
+    this.repository,
+    this.stateService,
+    this.messageService,
+    this.feedbackService,
+  );
 
   final Rxn<PetModel> pet = Rxn<PetModel>();
   final message = '今天也一起慢慢完成任务吧'.obs;
@@ -104,21 +28,23 @@ class PetController extends GetxController {
   final overlayEvent = Rxn<PetOverlayEvent>();
 
   final PetRepository repository;
+  final PetStateService stateService;
+  final PetMessageService messageService;
+  final PetFeedbackService feedbackService;
   Timer? _stateTimer;
   Timer? _messageResetTimer;
 
-  static const int _awakeEnergyDecayIntervalMinutes = 10;
-  static const int _focusEnergyCostIntervalMinutes = 5;
-  static const int _breakEnergyRestoreIntervalMinutes = 2;
-
-  int get expToNextLevel => (pet.value?.level ?? 1) * 40;
+  int get expToNextLevel {
+    final currentPet = pet.value;
+    return currentPet == null ? 40 : stateService.expToNextLevel(currentPet);
+  }
 
   double get expProgress {
     final currentPet = pet.value;
     if (currentPet == null) {
       return 0;
     }
-    return (currentPet.exp / expToNextLevel).clamp(0, 1).toDouble();
+    return stateService.expProgress(currentPet);
   }
 
   @override
@@ -143,35 +69,14 @@ class PetController extends GetxController {
       return;
     }
 
-    final elapsedMinutes = now
-        .difference(currentPet.lastInteractionAt)
-        .inMinutes;
-
-    if (elapsedMinutes <= 0) {
+    final result = stateService.applyTimeDelta(currentPet, now);
+    if (!result.changed) {
       return;
     }
 
-    currentPet.hunger = _clampStat(currentPet.hunger - elapsedMinutes);
-    currentPet.mood = _clampStat(currentPet.mood - elapsedMinutes);
-    if (currentPet.isSleeping) {
-      currentPet.energy = _clampStat(currentPet.energy + elapsedMinutes * 2);
-      currentPet.energyDecayRemainderMinutes = 0;
-    } else {
-      final accumulatedMinutes =
-          currentPet.energyDecayRemainderMinutes + elapsedMinutes;
-      final energyCost = accumulatedMinutes ~/ _awakeEnergyDecayIntervalMinutes;
-      currentPet.energyDecayRemainderMinutes =
-          accumulatedMinutes % _awakeEnergyDecayIntervalMinutes;
-      if (energyCost > 0) {
-        currentPet.energy = _clampStat(currentPet.energy - energyCost);
-      }
-    }
-    currentPet.lastInteractionAt = now;
-
-    if (currentPet.energy >= 100 && currentPet.isSleeping) {
-      currentPet.isSleeping = false;
+    if (result.wokeUp) {
       action.value = PetAction.idle;
-      _showTemporaryMessage('${currentPet.name}睡醒啦，精神很好');
+      _showTemporaryMessage(messageService.wokeUp(currentPet));
     } else if (_messageResetTimer == null || !_messageResetTimer!.isActive) {
       _restoreStatusMessage();
     }
@@ -186,21 +91,17 @@ class PetController extends GetxController {
     }
 
     await refreshPetState();
-    currentPet.isSleeping = false;
-    currentPet.mood = _clampStat(currentPet.mood + 1);
-    currentPet.energy = _clampStat(currentPet.energy - 2);
-    currentPet.lastInteractionAt = DateTime.now();
+    stateService.applyPetting(currentPet, DateTime.now());
     action.value = PetAction.pet;
     _emitFeedback(PetAction.pet);
-    _showTemporaryMessage('${currentPet.name}蹭了蹭你的手');
+    _showTemporaryMessage(messageService.petting(currentPet));
     await _saveAndNotify();
     _resetActionLater();
   }
 
   Future<void> feed() async {
-    final currentPet = pet.value;
-    final species = currentPet?.species ?? PetSpecies.cat;
-    _showTemporaryMessage('请选择已购买的${speciesLabel(species)}食物来喂食');
+    final species = pet.value?.species ?? PetSpecies.cat;
+    _showTemporaryMessage(messageService.feedPrompt(species));
   }
 
   Future<bool> feedWithFood(PetFood food) async {
@@ -210,14 +111,17 @@ class PetController extends GetxController {
     }
 
     await refreshPetState();
-    currentPet.isSleeping = false;
-    currentPet.hunger = _clampStat(currentPet.hunger + food.hungerBoost);
-    currentPet.mood = _clampStat(currentPet.mood + food.moodBoost);
-    currentPet.lastInteractionAt = DateTime.now();
+    final expResult = stateService.applyFeeding(
+      currentPet,
+      food,
+      DateTime.now(),
+    );
     action.value = PetAction.feed;
     _emitFeedback(PetAction.feed);
-    _showTemporaryMessage('${currentPet.name}吃了${food.name}，很满足');
-    _gainExp(10 + food.cost ~/ 10);
+    _showTemporaryMessage(messageService.fed(currentPet, food));
+    if (expResult.leveledUp) {
+      _showTemporaryMessage(messageService.levelUp(currentPet));
+    }
     await _saveAndNotify();
     _resetActionLater();
     return true;
@@ -229,10 +133,7 @@ class PetController extends GetxController {
       return;
     }
 
-    final target = taskTitle == null || taskTitle.isEmpty
-        ? '这一轮'
-        : '“$taskTitle”';
-    _showTemporaryMessage('${currentPet.name}正在陪你专注，先守住$target。');
+    _showTemporaryMessage(messageService.focusCompanion(currentPet, taskTitle));
   }
 
   Future<void> applyFocusEnergyCost(PomodoroModel record) async {
@@ -244,17 +145,15 @@ class PetController extends GetxController {
       return;
     }
 
-    final energyCost = _timedStatUnits(
-      actualSeconds: record.actualSeconds,
-      intervalMinutes: _focusEnergyCostIntervalMinutes,
+    await refreshPetState();
+    final changed = stateService.applyFocusEnergyCost(
+      currentPet,
+      record,
+      DateTime.now(),
     );
-    if (energyCost <= 0) {
+    if (!changed) {
       return;
     }
-
-    await refreshPetState();
-    currentPet.energy = _clampStat(currentPet.energy - energyCost);
-    currentPet.lastInteractionAt = DateTime.now();
     await _saveAndNotify();
   }
 
@@ -267,17 +166,15 @@ class PetController extends GetxController {
       return;
     }
 
-    final energyBoost = _timedStatUnits(
-      actualSeconds: record.actualSeconds,
-      intervalMinutes: _breakEnergyRestoreIntervalMinutes,
+    await refreshPetState();
+    final changed = stateService.restoreBreakEnergy(
+      currentPet,
+      record,
+      DateTime.now(),
     );
-    if (energyBoost <= 0) {
+    if (!changed) {
       return;
     }
-
-    await refreshPetState();
-    currentPet.energy = _clampStat(currentPet.energy + energyBoost);
-    currentPet.lastInteractionAt = DateTime.now();
     await _saveAndNotify();
   }
 
@@ -296,11 +193,14 @@ class PetController extends GetxController {
       currentPet.isSleeping = true;
     }
     const moodBoost = 6;
-    currentPet.mood = _clampStat(currentPet.mood + moodBoost);
-    currentPet.lastInteractionAt = DateTime.now();
-    _gainExp(8);
+    stateService.applyMoodDelta(currentPet, moodBoost, DateTime.now());
+    stateService.gainExp(currentPet, 8);
 
-    final messageText = _focusCompletionMessage(currentPet, record, reward);
+    final messageText = messageService.focusCompletion(
+      currentPet,
+      record,
+      reward,
+    );
     action.value = PetAction.taskComplete;
     _emitFeedback(PetAction.taskComplete);
     _showTemporaryMessage(messageText);
@@ -324,12 +224,12 @@ class PetController extends GetxController {
     if (wasSleeping) {
       currentPet.isSleeping = true;
     }
-    final moodBoost = _taskMoodBoost(task);
-    final expReward = _taskExpReward(task);
-    final messageText = _taskCompletionMessage(currentPet, task);
-    currentPet.mood = _clampStat(currentPet.mood + moodBoost);
-    _gainExp(expReward);
-    currentPet.lastInteractionAt = DateTime.now();
+    final moodBoost = stateService.taskMoodBoost(task);
+    final expReward = stateService.taskExpReward(task);
+    stateService.applyMoodDelta(currentPet, moodBoost, DateTime.now());
+    stateService.gainExp(currentPet, expReward);
+    final messageText = messageService.taskCompletion(currentPet, task);
+
     action.value = PetAction.taskComplete;
     _emitFeedback(PetAction.taskComplete);
     _showTemporaryMessage(messageText);
@@ -357,9 +257,8 @@ class PetController extends GetxController {
       currentPet.isSleeping = true;
     }
     final penalty = (count * 2).clamp(0, 6).toInt();
-    final messageText = _overdueMessage(count, title);
-    currentPet.mood = _clampStat(currentPet.mood - penalty);
-    currentPet.lastInteractionAt = DateTime.now();
+    final messageText = messageService.overdue(count, title);
+    stateService.applyMoodDelta(currentPet, -penalty, DateTime.now());
     action.value = PetAction.overdue;
     _emitFeedback(PetAction.overdue);
     _showTemporaryMessage(messageText);
@@ -377,22 +276,23 @@ class PetController extends GetxController {
       return;
     }
 
-    currentPet.species = species;
-    currentPet.lastInteractionAt = DateTime.now();
-    _showTemporaryMessage('已经切换为${speciesLabel(species)}');
+    stateService.setSpecies(currentPet, species, DateTime.now());
+    _showTemporaryMessage(messageService.speciesSelected(species));
     await _saveAndNotify();
   }
 
   Future<bool> renamePet(String name) async {
     final currentPet = pet.value;
     final trimmed = name.trim();
-    if (currentPet == null || trimmed.isEmpty || trimmed.length > 8) {
+    if (currentPet == null) {
       return false;
     }
 
-    currentPet.name = trimmed;
-    currentPet.lastInteractionAt = DateTime.now();
-    _showTemporaryMessage('现在叫我$trimmed吧');
+    final renamed = stateService.rename(currentPet, trimmed, DateTime.now());
+    if (!renamed) {
+      return false;
+    }
+    _showTemporaryMessage(messageService.renamed(trimmed));
     await _saveAndNotify();
     return true;
   }
@@ -404,34 +304,11 @@ class PetController extends GetxController {
     }
 
     await refreshPetState();
-    currentPet.isSleeping = !currentPet.isSleeping;
-    if (currentPet.isSleeping) {
-      currentPet.energyDecayRemainderMinutes = 0;
-    }
-    currentPet.lastInteractionAt = DateTime.now();
+    stateService.toggleSleep(currentPet, DateTime.now());
     action.value = currentPet.isSleeping ? PetAction.sleep : PetAction.idle;
     _emitFeedback(currentPet.isSleeping ? PetAction.sleep : PetAction.idle);
-    _showTemporaryMessage(
-      currentPet.isSleeping
-          ? '${currentPet.name}蜷起来睡觉了'
-          : '${currentPet.name}醒来陪你啦',
-    );
+    _showTemporaryMessage(messageService.sleepToggled(currentPet));
     await _saveAndNotify();
-  }
-
-  void _gainExp(int amount) {
-    final currentPet = pet.value;
-    if (currentPet == null) {
-      return;
-    }
-
-    currentPet.exp += amount;
-    while (currentPet.exp >= expToNextLevel) {
-      currentPet.exp -= expToNextLevel;
-      currentPet.level++;
-      currentPet.mood = _clampStat(currentPet.mood + 10);
-      _showTemporaryMessage('${currentPet.name}升级到 Lv.${currentPet.level} 啦');
-    }
   }
 
   Future<void> _saveAndNotify() async {
@@ -477,7 +354,7 @@ class PetController extends GetxController {
     if (currentPet == null) {
       return;
     }
-    message.value = _statusMessage(currentPet);
+    message.value = messageService.statusMessage(currentPet);
   }
 
   void _emitFeedback(PetAction nextAction) {
@@ -490,102 +367,11 @@ class PetController extends GetxController {
     String text, {
     required int moodDelta,
   }) {
-    final now = DateTime.now();
-    overlayEvent.value = PetOverlayEvent(
-      id: '${now.microsecondsSinceEpoch}_${nextAction.name}',
-      action: nextAction,
-      message: text,
-      createdAt: now,
+    overlayEvent.value = feedbackService.createOverlayEvent(
+      nextAction,
+      text,
       moodDelta: moodDelta,
     );
-  }
-
-  String _statusMessage(PetModel currentPet) {
-    if (currentPet.isSleeping) {
-      return '${currentPet.name}正在睡觉恢复精力';
-    }
-    if (currentPet.hunger < 35) {
-      return '${currentPet.name}有点饿了';
-    }
-    if (currentPet.energy < 30) {
-      return '${currentPet.name}想休息一下';
-    }
-    if (currentPet.mood < 35) {
-      return '${currentPet.name}想要一点陪伴';
-    }
-    return '今天也一起慢慢完成任务吧';
-  }
-
-  int _taskMoodBoost(TaskModel task) {
-    switch (task.priority) {
-      case 1:
-        return 10;
-      case 3:
-        return 8;
-      case 2:
-        return 6;
-      case 4:
-        return 4;
-      default:
-        return 5;
-    }
-  }
-
-  int _taskExpReward(TaskModel task) {
-    switch (task.priority) {
-      case 1:
-        return 16;
-      case 3:
-        return 12;
-      case 2:
-        return 8;
-      case 4:
-        return 4;
-      default:
-        return 6;
-    }
-  }
-
-  String _taskCompletionMessage(PetModel currentPet, TaskModel task) {
-    if (task.priority == 1 || task.priority == 3) {
-      return '这件重要的事被你拿下了，${currentPet.name}超开心！';
-    }
-    return '${currentPet.name}开心地跳起来：任务完成啦，做得很好！';
-  }
-
-  String _overdueMessage(int count, String? title) {
-    if (count == 1 && title != null && title.isNotEmpty) {
-      return '“$title”超过时间了，我们先从一点点开始吧。';
-    }
-    return '有 $count 个任务超过时间了，我们先从一个小任务重新开始吧。';
-  }
-
-  String _focusCompletionMessage(
-    PetModel currentPet,
-    PomodoroModel record,
-    int reward,
-  ) {
-    final minutes = record.actualSeconds ~/ 60;
-    if (record.taskTitle != null && record.taskTitle!.isNotEmpty) {
-      return '${currentPet.name}陪你专注了 $minutes 分钟，“${record.taskTitle}”向前推进啦！';
-    }
-    return '${currentPet.name}陪你守住了 $minutes 分钟专注，奖励 +$reward 积分！';
-  }
-
-  int _clampStat(int value) {
-    return value.clamp(0, 100).toInt();
-  }
-
-  int _timedStatUnits({
-    required int actualSeconds,
-    required int intervalMinutes,
-  }) {
-    if (actualSeconds <= 0 || intervalMinutes <= 0) {
-      return 0;
-    }
-    final secondsPerUnit = intervalMinutes * 60;
-    final units = actualSeconds ~/ secondsPerUnit;
-    return units > 0 ? units : 1;
   }
 
   @override

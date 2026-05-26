@@ -2,10 +2,10 @@ import 'dart:math';
 
 import 'package:get/get.dart';
 import 'package:todolist/data/repositories/reward_repository.dart';
+import 'package:todolist/features/pet/domain/pet_food.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
 import 'package:todolist/model/reward/reward_wallet.dart';
 import 'package:todolist/model/task/task.dart';
-import 'package:todolist/page/pet/pet_controller.dart';
 
 class RewardController extends GetxController {
   RewardController(this.repository);

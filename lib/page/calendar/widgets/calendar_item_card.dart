@@ -1,16 +1,25 @@
-part of '../calendar.dart';
+import 'package:flutter/material.dart';
+import 'package:todolist/constants/theme.dart';
+import 'package:todolist/features/schedule/services/schedule_color_service.dart';
+import 'package:todolist/model/calendar/calendar.dart';
+import 'package:todolist/model/schedule/schedule.dart';
+import 'package:todolist/page/calendar/calendar_controller.dart';
+import 'package:todolist/page/calendar/sheets/item_detail_sheet.dart';
+import 'package:todolist/page/calendar/sheets/schedule_session_sheet.dart';
+import 'package:todolist/page/calendar/utils/formatters.dart';
+import 'package:todolist/page/calendar/utils/schedule_calendar_helpers.dart';
+import 'package:todolist/page/schedule/schedule_controller.dart';
+import 'package:todolist/page/task/task_controller.dart';
 
 // 单个事项卡片
-Widget _buildItemCard(
+Widget buildCalendarItemCard(
   CalendarModel item,
   CalendarController calenderController,
   TaskController taskController,
 ) {
   final isApp = item.source == 'app';
   final linkedTask = isApp ? taskController.findTaskById(item.taskId) : null;
-  final color = isApp
-      ? (CalendarPage._priorityColors[item.priority] ?? Colors.grey)
-      : Colors.purple;
+  final color = isApp ? calendarPriorityColor(item.priority) : Colors.purple;
 
   return Card(
     margin: const EdgeInsets.only(bottom: 8),
@@ -55,7 +64,7 @@ Widget _buildItemCard(
           if (item.startTime != null) ...[
             const SizedBox(width: 8),
             Text(
-              _formatTime(item.startTime!),
+              formatCalendarTime(item.startTime!),
               style: const TextStyle(fontSize: 10, color: Colors.grey),
             ),
           ],
@@ -70,12 +79,13 @@ Widget _buildItemCard(
             )
           : null,
       // 点击事件显示详情
-      onTap: () => _showItemDetail(item, calenderController, taskController),
+      onTap: () =>
+          showCalendarItemDetail(item, calenderController, taskController),
     ),
   );
 }
 
-Widget _buildScheduleSessionCalendarCard(
+Widget buildScheduleSessionCalendarCard(
   BuildContext context,
   ScheduleController scheduleController,
   ScheduleSemesterModel semester,
@@ -83,8 +93,8 @@ Widget _buildScheduleSessionCalendarCard(
   AppThemePalette palette,
 ) {
   final color = ScheduleColorService.colorForSession(session, palette);
-  final timeRange = _scheduleSessionTimeRange(semester, session);
-  final location = _scheduleValueOrFallback(session.location);
+  final timeRange = scheduleSessionTimeRange(semester, session);
+  final location = scheduleValueOrFallback(session.location);
 
   return Card(
     margin: const EdgeInsets.only(bottom: 8),
@@ -119,7 +129,7 @@ Widget _buildScheduleSessionCalendarCard(
         ),
       ),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () => _showScheduleSessionDetailDialog(
+      onTap: () => showScheduleSessionDetailDialog(
         context,
         scheduleController,
         [session],

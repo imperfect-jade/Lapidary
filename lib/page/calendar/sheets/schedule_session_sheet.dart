@@ -1,6 +1,12 @@
-part of '../calendar.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/constants/theme.dart';
+import 'package:todolist/model/schedule/schedule.dart';
+import 'package:todolist/page/calendar/dialogs/schedule_session_dialog.dart';
+import 'package:todolist/page/calendar/utils/formatters.dart';
+import 'package:todolist/page/schedule/schedule_controller.dart';
 
-void _showScheduleSessionDetailDialog(
+void showScheduleSessionDetailDialog(
   BuildContext context,
   ScheduleController controller,
   List<ScheduleSessionModel> sessions,
@@ -36,7 +42,7 @@ void _showScheduleSessionDetailDialog(
           TextButton.icon(
             onPressed: () {
               Get.back();
-              _showScheduleSessionDialog(
+              showScheduleSessionDialog(
                 context,
                 controller,
                 session: singleSession,
@@ -58,14 +64,14 @@ Widget _buildScheduleSessionDetailContent(ScheduleSessionModel session) {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       _scheduleDetailRow('上课时间', session.chineseTime),
-      _scheduleDetailRow('教师', _scheduleValueOrFallback(session.teacher)),
-      _scheduleDetailRow('地点', _scheduleValueOrFallback(session.location)),
-      _scheduleDetailRow('重复', _formatScheduleRepeat(session)),
-      _scheduleDetailRow('学期范围', _formatScheduleHalfRange(session)),
+      _scheduleDetailRow('教师', scheduleValueOrFallback(session.teacher)),
+      _scheduleDetailRow('地点', scheduleValueOrFallback(session.location)),
+      _scheduleDetailRow('重复', formatScheduleRepeat(session)),
+      _scheduleDetailRow('学期范围', formatScheduleHalfRange(session)),
       _scheduleDetailRow('上课方式', session.online == true ? '线上' : '线下'),
-      _scheduleDetailRow('课程类型', _scheduleValueOrFallback(session.type)),
+      _scheduleDetailRow('课程类型', scheduleValueOrFallback(session.type)),
       if (session.credit != null)
-        _scheduleDetailRow('学分', _formatScheduleCredit(session.credit!)),
+        _scheduleDetailRow('学分', formatScheduleCredit(session.credit!)),
     ],
   );
 }
@@ -108,7 +114,7 @@ Widget _buildScheduleConflictContent(
                       tooltip: '编辑',
                       onPressed: () {
                         Get.back();
-                        _showScheduleSessionDialog(
+                        showScheduleSessionDialog(
                           context,
                           controller,
                           session: session,
@@ -130,8 +136,8 @@ Widget _buildScheduleConflictContent(
                 Text(
                   [
                     session.chineseTime,
-                    _scheduleValueOrFallback(session.location),
-                    _formatScheduleRepeat(session),
+                    scheduleValueOrFallback(session.location),
+                    formatScheduleRepeat(session),
                   ].join(' · '),
                   style: TextStyle(color: Colors.grey[700], fontSize: 12),
                 ),
@@ -165,53 +171,6 @@ Widget _scheduleDetailRow(String label, String value, {Color? valueColor}) {
       ],
     ),
   );
-}
-
-String _scheduleValueOrFallback(String? value) {
-  final text = value?.trim();
-  if (text == null || text.isEmpty) {
-    return '未填写';
-  }
-  return text;
-}
-
-String _formatScheduleRepeat(ScheduleSessionModel session) {
-  if (session.customRepeat) {
-    if (session.customRepeatWeeks.isEmpty) {
-      return '自定义周';
-    }
-    return '第${session.customRepeatWeeks.join('、')}周';
-  }
-  if (session.oddWeek && session.evenWeek) {
-    return '每周';
-  }
-  if (session.oddWeek) {
-    return '单周';
-  }
-  if (session.evenWeek) {
-    return '双周';
-  }
-  return '未设置';
-}
-
-String _formatScheduleHalfRange(ScheduleSessionModel session) {
-  if (session.firstHalf && session.secondHalf) {
-    return '上半学期、下半学期';
-  }
-  if (session.firstHalf) {
-    return '上半学期';
-  }
-  if (session.secondHalf) {
-    return '下半学期';
-  }
-  return '未设置';
-}
-
-String _formatScheduleCredit(double credit) {
-  if (credit == credit.roundToDouble()) {
-    return credit.toInt().toString();
-  }
-  return credit.toStringAsFixed(1);
 }
 
 void _confirmDeleteScheduleSession(

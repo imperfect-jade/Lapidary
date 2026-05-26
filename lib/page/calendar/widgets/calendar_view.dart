@@ -1,7 +1,18 @@
-part of '../calendar.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:table_calendar/table_calendar.dart';
+import 'package:todolist/constants/theme.dart';
+import 'package:todolist/features/schedule/services/schedule_color_service.dart';
+import 'package:todolist/model/schedule/schedule.dart';
+import 'package:todolist/model/task/task.dart';
+import 'package:todolist/page/calendar/calendar_controller.dart';
+import 'package:todolist/page/calendar/utils/formatters.dart';
+import 'package:todolist/page/calendar/utils/schedule_calendar_helpers.dart';
+import 'package:todolist/page/schedule/schedule_controller.dart';
+import 'package:todolist/page/task/task_controller.dart';
 
 // 日历视图
-Widget _buildCalendar(
+Widget buildCalendarView(
   CalendarController calenderController,
   TaskController taskController,
   ScheduleController scheduleController,
@@ -28,7 +39,7 @@ Widget _buildCalendar(
       eventLoader: (day) {
         return <Object>[
           ...taskController.tasksForDay(day),
-          ..._scheduleSessionsForDate(scheduleController, day),
+          ...scheduleSessionsForDate(scheduleController, day),
         ];
       },
 
@@ -94,7 +105,7 @@ Color _calendarMarkerColor(Object event, AppThemePalette palette) {
     return ScheduleColorService.colorForSession(event, palette);
   }
   if (event is TaskModel) {
-    return CalendarPage._priorityColors[event.priority] ?? Colors.grey;
+    return calendarPriorityColor(event.priority);
   }
   return Colors.grey;
 }

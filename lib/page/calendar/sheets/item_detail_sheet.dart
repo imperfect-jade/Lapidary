@@ -1,7 +1,12 @@
-part of '../calendar.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/model/calendar/calendar.dart';
+import 'package:todolist/page/calendar/calendar_controller.dart';
+import 'package:todolist/page/calendar/utils/formatters.dart';
+import 'package:todolist/page/task/task_controller.dart';
 
 // 事项详情
-void _showItemDetail(
+void showCalendarItemDetail(
   CalendarModel item,
   CalendarController calenderController,
   TaskController taskController,
@@ -73,7 +78,7 @@ void _showItemDetail(
               style: TextStyle(color: Colors.grey, fontSize: 12),
             ),
             if (item.startTime != null)
-              Text('时间：${_formatDateTime(item.startTime!)}'),
+              Text('时间：${formatCalendarDateTime(item.startTime!)}'),
           ],
         ],
       ),

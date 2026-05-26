@@ -1,6 +1,9 @@
-part of '../calendar.dart';
+import 'package:todolist/features/schedule/services/schedule_date_service.dart';
+import 'package:todolist/features/schedule/services/schedule_time_service.dart';
+import 'package:todolist/model/schedule/schedule.dart';
+import 'package:todolist/page/schedule/schedule_controller.dart';
 
-List<ScheduleSessionModel> _scheduleSessionsForDate(
+List<ScheduleSessionModel> scheduleSessionsForDate(
   ScheduleController controller,
   DateTime date,
 ) {
@@ -11,10 +14,7 @@ List<ScheduleSessionModel> _scheduleSessionsForDate(
   return ScheduleDateService.sessionsForDate(semester, date);
 }
 
-String? _scheduleWeekLabelForDate(
-  ScheduleController controller,
-  DateTime date,
-) {
+String? scheduleWeekLabelForDate(ScheduleController controller, DateTime date) {
   final semester = controller.selectedSemester;
   if (semester == null) {
     return null;
@@ -22,7 +22,7 @@ String? _scheduleWeekLabelForDate(
   return ScheduleDateService.dayContextForDate(semester, date)?.weekLabel;
 }
 
-String _scheduleSessionTimeRange(
+String scheduleSessionTimeRange(
   ScheduleSemesterModel semester,
   ScheduleSessionModel session,
 ) {

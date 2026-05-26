@@ -1,6 +1,16 @@
-part of '../calendar.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/constants/theme.dart';
+import 'package:todolist/features/schedule/services/schedule_color_service.dart';
+import 'package:todolist/features/schedule/services/schedule_layout_service.dart';
+import 'package:todolist/features/schedule/services/schedule_time_service.dart';
+import 'package:todolist/model/schedule/schedule.dart';
+import 'package:todolist/page/calendar/dialogs/schedule_semester_dialog.dart';
+import 'package:todolist/page/calendar/dialogs/schedule_session_dialog.dart';
+import 'package:todolist/page/calendar/sheets/schedule_session_sheet.dart';
+import 'package:todolist/page/schedule/schedule_controller.dart';
 
-Widget _buildScheduleView(
+Widget buildScheduleView(
   BuildContext context,
   ScheduleController scheduleController,
 ) {
@@ -50,7 +60,7 @@ Widget _buildScheduleEmptyState(
         const SizedBox(height: 14),
         ElevatedButton.icon(
           onPressed: () =>
-              _showScheduleSemesterDialog(context, scheduleController),
+              showScheduleSemesterDialog(context, scheduleController),
           icon: const Icon(Icons.add),
           label: const Text('创建学期'),
         ),
@@ -59,7 +69,7 @@ Widget _buildScheduleEmptyState(
   );
 }
 
-Widget _buildScheduleFloatingActionButton(
+Widget buildScheduleFloatingActionButton(
   BuildContext context,
   ScheduleController controller,
 ) {
@@ -77,9 +87,9 @@ Widget _buildScheduleFloatingActionButton(
       foregroundColor: Colors.white,
       onPressed: () {
         if (hasSemester) {
-          _showScheduleSessionDialog(context, controller);
+          showScheduleSessionDialog(context, controller);
         } else {
-          _showScheduleSemesterDialog(context, controller);
+          showScheduleSemesterDialog(context, controller);
         }
       },
       child: Icon(hasSemester ? Icons.add : Icons.add_chart),
@@ -142,10 +152,10 @@ Widget _buildScheduleToolbar(
                 onSelected: (action) {
                   switch (action) {
                     case _ScheduleToolbarAction.addSession:
-                      _showScheduleSessionDialog(context, controller);
+                      showScheduleSessionDialog(context, controller);
                       break;
                     case _ScheduleToolbarAction.createSemester:
-                      _showScheduleSemesterDialog(context, controller);
+                      showScheduleSemesterDialog(context, controller);
                       break;
                   }
                 },
@@ -452,7 +462,7 @@ List<Widget> _buildScheduleCardsByDay(
             hideInformation: hideInformation,
             compact: compact,
             palette: palette,
-            onTap: () => _showScheduleSessionDetailDialog(
+            onTap: () => showScheduleSessionDetailDialog(
               context,
               controller,
               block.sessions,

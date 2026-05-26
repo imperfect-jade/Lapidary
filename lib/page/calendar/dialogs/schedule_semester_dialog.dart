@@ -1,6 +1,8 @@
-part of '../calendar.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/page/schedule/schedule_controller.dart';
 
-void _showScheduleSemesterDialog(
+void showScheduleSemesterDialog(
   BuildContext context,
   ScheduleController controller,
 ) {

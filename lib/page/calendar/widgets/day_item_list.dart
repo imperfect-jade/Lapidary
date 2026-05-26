@@ -1,7 +1,14 @@
-part of '../calendar.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/constants/theme.dart';
+import 'package:todolist/page/calendar/calendar_controller.dart';
+import 'package:todolist/page/calendar/utils/schedule_calendar_helpers.dart';
+import 'package:todolist/page/calendar/widgets/calendar_item_card.dart';
+import 'package:todolist/page/schedule/schedule_controller.dart';
+import 'package:todolist/page/task/task_controller.dart';
 
 // 当日事项列表
-Widget _buildDayList(
+Widget buildDayItemList(
   BuildContext context,
   CalendarController calenderController,
   TaskController taskController,
@@ -13,11 +20,11 @@ Widget _buildDayList(
       selected,
       taskController.tasksForDay(selected),
     );
-    final scheduleSessions = _scheduleSessionsForDate(
+    final scheduleSessions = scheduleSessionsForDate(
       scheduleController,
       selected,
     );
-    final weekLabel = _scheduleWeekLabelForDate(scheduleController, selected);
+    final weekLabel = scheduleWeekLabelForDate(scheduleController, selected);
     final semester = scheduleController.selectedSemester;
     final palette = Get.isRegistered<ThemeController>()
         ? Get.find<ThemeController>().currentPalette
@@ -52,11 +59,12 @@ Widget _buildDayList(
             ),
           ),
         ...items.map(
-          (item) => _buildItemCard(item, calenderController, taskController),
+          (item) =>
+              buildCalendarItemCard(item, calenderController, taskController),
         ),
         if (semester != null)
           ...scheduleSessions.map(
-            (session) => _buildScheduleSessionCalendarCard(
+            (session) => buildScheduleSessionCalendarCard(
               context,
               scheduleController,
               semester,

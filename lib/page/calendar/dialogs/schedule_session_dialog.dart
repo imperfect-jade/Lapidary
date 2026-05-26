@@ -1,6 +1,9 @@
-part of '../calendar.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/model/schedule/schedule.dart';
+import 'package:todolist/page/schedule/schedule_controller.dart';
 
-void _showScheduleSessionDialog(
+void showScheduleSessionDialog(
   BuildContext context,
   ScheduleController controller, {
   ScheduleSessionModel? session,

@@ -2,14 +2,17 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:todolist/data/repositories/pomodoro_repository.dart';
+import 'package:todolist/features/productivity/services/productivity_feedback_service.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
-import 'package:todolist/page/pet/pet_controller.dart';
-import 'package:todolist/page/pet/reward_controller.dart';
 
 class PomodoroController extends GetxController {
-  PomodoroController(this.repository);
+  PomodoroController(
+    this.repository, [
+    ProductivityFeedbackService? feedbackService,
+  ]) : feedbackService = feedbackService ?? ProductivityFeedbackService.noop();
 
   final PomodoroRepository repository;
+  final ProductivityFeedbackService feedbackService;
 
   // ========== 状态变量 ==========
 
@@ -69,9 +72,7 @@ class PomodoroController extends GetxController {
     currentTaskTitle.value = taskTitle;
     currentMode.value = 'focus';
     _startTimer(focusDuration.value * 60);
-    if (Get.isRegistered<PetController>()) {
-      Get.find<PetController>().startFocusCompanion(taskTitle: taskTitle);
-    }
+    feedbackService.handleFocusStarted(taskTitle);
   }
 
   // 开始休息
@@ -195,30 +196,7 @@ class PomodoroController extends GetxController {
     );
 
     await repository.put(record);
-    if (Get.isRegistered<PetController>()) {
-      final petController = Get.find<PetController>();
-      if (mode == 'focus') {
-        await petController.applyFocusEnergyCost(record);
-      } else if (mode == 'break' && isCompleted) {
-        await petController.restoreBreakEnergy(record);
-      }
-    }
-    if (isCompleted && Get.isRegistered<RewardController>()) {
-      final reward = await Get.find<RewardController>().awardPomodoro(record);
-      if (reward > 0 && mode == 'focus') {
-        Get.snackbar(
-          '获得奖励',
-          '专注奖励 +$reward 积分',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-        if (Get.isRegistered<PetController>()) {
-          await Get.find<PetController>().celebrateFocusCompletion(
-            record,
-            reward,
-          );
-        }
-      }
-    }
+    await feedbackService.handlePomodoroRecordSaved(record);
   }
 
   // 格式化时间显示

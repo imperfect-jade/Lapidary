@@ -8,11 +8,12 @@ import 'package:todolist/features/pet/domain/pet_overlay_event.dart';
 import 'package:todolist/features/pet/services/pet_feedback_service.dart';
 import 'package:todolist/features/pet/services/pet_message_service.dart';
 import 'package:todolist/features/pet/services/pet_state_service.dart';
+import 'package:todolist/features/productivity/ports/productivity_feedback_ports.dart';
 import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
 import 'package:todolist/model/task/task.dart';
 
-class PetController extends GetxController {
+class PetController extends GetxController implements PetFeedbackPort {
   PetController(
     this.repository,
     this.stateService,
@@ -127,6 +128,7 @@ class PetController extends GetxController {
     return true;
   }
 
+  @override
   void startFocusCompanion({String? taskTitle}) {
     final currentPet = pet.value;
     if (currentPet == null) {
@@ -136,6 +138,7 @@ class PetController extends GetxController {
     _showTemporaryMessage(messageService.focusCompanion(currentPet, taskTitle));
   }
 
+  @override
   Future<void> applyFocusEnergyCost(PomodoroModel record) async {
     if (record.type != 'focus') {
       return;
@@ -157,6 +160,7 @@ class PetController extends GetxController {
     await _saveAndNotify();
   }
 
+  @override
   Future<void> restoreBreakEnergy(PomodoroModel record) async {
     if (record.type != 'break' || !record.isCompleted) {
       return;
@@ -178,6 +182,7 @@ class PetController extends GetxController {
     await _saveAndNotify();
   }
 
+  @override
   Future<void> celebrateFocusCompletion(
     PomodoroModel record,
     int reward,
@@ -213,6 +218,7 @@ class PetController extends GetxController {
     _resetActionLater(restoreSleep: wasSleeping);
   }
 
+  @override
   Future<void> celebrateTaskCompletion(TaskModel task) async {
     final currentPet = pet.value;
     if (currentPet == null) {
@@ -242,6 +248,7 @@ class PetController extends GetxController {
     _resetActionLater(restoreSleep: wasSleeping);
   }
 
+  @override
   Future<void> remindOverdueTasks(int count, String? title) async {
     if (count <= 0) {
       return;

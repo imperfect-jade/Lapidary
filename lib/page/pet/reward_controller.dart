@@ -3,11 +3,12 @@ import 'dart:math';
 import 'package:get/get.dart';
 import 'package:todolist/data/repositories/reward_repository.dart';
 import 'package:todolist/features/pet/domain/pet_food.dart';
+import 'package:todolist/features/productivity/ports/productivity_feedback_ports.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
 import 'package:todolist/model/reward/reward_wallet.dart';
 import 'package:todolist/model/task/task.dart';
 
-class RewardController extends GetxController {
+class RewardController extends GetxController implements RewardFeedbackPort {
   RewardController(this.repository);
 
   static const String walletKey = RewardRepository.walletKey;
@@ -31,6 +32,7 @@ class RewardController extends GetxController {
     wallet.value = await repository.getWallet();
   }
 
+  @override
   Future<int> awardPomodoro(PomodoroModel record) async {
     final currentWallet = wallet.value;
     if (currentWallet == null ||
@@ -49,6 +51,7 @@ class RewardController extends GetxController {
     return reward;
   }
 
+  @override
   Future<int> awardTaskCompletion(TaskModel task) async {
     final currentWallet = wallet.value;
     if (currentWallet == null ||

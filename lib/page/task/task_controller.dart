@@ -2,14 +2,17 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 import 'package:todolist/data/repositories/task_repository.dart';
+import 'package:todolist/features/productivity/services/productivity_feedback_service.dart';
 import 'package:todolist/model/task/task.dart';
-import 'package:todolist/page/pet/pet_controller.dart';
-import 'package:todolist/page/pet/reward_controller.dart';
 
 class TaskController extends GetxController {
-  TaskController(this.repository);
+  TaskController(
+    this.repository, [
+    ProductivityFeedbackService? feedbackService,
+  ]) : feedbackService = feedbackService ?? ProductivityFeedbackService.noop();
 
   final TaskRepository repository;
+  final ProductivityFeedbackService feedbackService;
   final RxList<TaskModel> taskList = <TaskModel>[].obs;
   final List<TaskModel> _sortedTasks = [];
   final List<TaskModel> _pendingTasks = [];
@@ -96,21 +99,7 @@ class TaskController extends GetxController {
     task.isCompleted = !task.isCompleted;
     await repository.save(task);
     if (!wasCompleted && task.isCompleted) {
-      if (Get.isRegistered<RewardController>()) {
-        final reward = await Get.find<RewardController>().awardTaskCompletion(
-          task,
-        );
-        if (reward > 0) {
-          Get.snackbar(
-            '任务完成奖励',
-            '获得 $reward 积分',
-            snackPosition: SnackPosition.BOTTOM,
-          );
-          if (Get.isRegistered<PetController>()) {
-            await Get.find<PetController>().celebrateTaskCompletion(task);
-          }
-        }
-      }
+      await feedbackService.handleTaskCompleted(task);
     }
     _rebuildCaches();
     update(['task_${task.id}', 'task_list', 'quadrant', 'calendar']);
@@ -174,10 +163,6 @@ class TaskController extends GetxController {
   }
 
   Future<void> _applyOverdueMoodPenalties() async {
-    if (!Get.isRegistered<PetController>()) {
-      return;
-    }
-
     final now = DateTime.now();
     final overdueTasks = taskList
         .where(
@@ -197,7 +182,7 @@ class TaskController extends GetxController {
       await repository.save(task);
     }
 
-    await Get.find<PetController>().remindOverdueTasks(
+    await feedbackService.handleOverdueTasks(
       overdueTasks.length,
       overdueTasks.length == 1 ? overdueTasks.first.title : null,
     );

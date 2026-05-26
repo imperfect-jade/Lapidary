@@ -1,10 +1,17 @@
-part of '../pet.dart';
+import 'package:flutter/material.dart';
+import 'package:todolist/constants/theme.dart';
+import 'package:todolist/model/pet/pet.dart';
+import 'package:todolist/page/pet/pet_controller.dart';
 
-class _GrowthPanel extends StatelessWidget {
+class PetGrowthPanel extends StatelessWidget {
   final PetController controller;
   final PetModel pet;
 
-  const _GrowthPanel({required this.controller, required this.pet});
+  const PetGrowthPanel({
+    super.key,
+    required this.controller,
+    required this.pet,
+  });
 
   @override
   Widget build(BuildContext context) {

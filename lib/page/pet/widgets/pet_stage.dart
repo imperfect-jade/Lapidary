@@ -1,10 +1,15 @@
-part of '../pet.dart';
+import 'package:flutter/material.dart';
+import 'package:todolist/model/pet/pet.dart';
+import 'package:todolist/page/pet/pet_controller.dart';
 
-class _PetStage extends StatelessWidget {
+import '../sprite/animated_pet_sprite.dart';
+import '../sprite/sprite_feedback.dart';
+
+class PetStage extends StatelessWidget {
   final PetController controller;
   final PetModel pet;
 
-  const _PetStage({required this.controller, required this.pet});
+  const PetStage({super.key, required this.controller, required this.pet});
 
   @override
   Widget build(BuildContext context) {
@@ -32,8 +37,8 @@ class _PetStage extends StatelessWidget {
                 ),
               ),
             ),
-            _AnimatedPetSprite(controller: controller, pet: pet),
-            _PetFeedbackOverlay(controller: controller, pet: pet),
+            AnimatedPetSprite(controller: controller, pet: pet),
+            PetFeedbackOverlay(controller: controller, pet: pet),
           ],
         ),
       ),

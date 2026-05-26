@@ -1,9 +1,10 @@
-part of '../pet.dart';
+import 'package:flutter/material.dart';
+import 'package:todolist/model/pet/pet.dart';
 
-class _StatusGrid extends StatelessWidget {
+class PetStatusGrid extends StatelessWidget {
   final PetModel pet;
 
-  const _StatusGrid({required this.pet});
+  const PetStatusGrid({super.key, required this.pet});
 
   @override
   Widget build(BuildContext context) {

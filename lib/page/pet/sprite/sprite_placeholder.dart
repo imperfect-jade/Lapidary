@@ -1,10 +1,14 @@
-part of '../pet.dart';
+import 'package:flutter/material.dart';
 
-class _SpriteLoadPlaceholder extends StatelessWidget {
+class SpriteLoadPlaceholder extends StatelessWidget {
   final bool failed;
   final Size size;
 
-  const _SpriteLoadPlaceholder({required this.failed, required this.size});
+  const SpriteLoadPlaceholder({
+    super.key,
+    required this.failed,
+    required this.size,
+  });
 
   @override
   Widget build(BuildContext context) {

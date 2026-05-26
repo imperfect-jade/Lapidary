@@ -1,10 +1,17 @@
-part of '../pet.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/features/pet/domain/pet_food.dart';
+import 'package:todolist/features/pet/services/pet_food_catalog.dart';
+import 'package:todolist/model/pet/pet.dart';
+import 'package:todolist/page/pet/pet_controller.dart';
+import 'package:todolist/page/pet/reward_controller.dart';
 
-class _FoodPickerSheet extends StatelessWidget {
+class PetFoodPickerSheet extends StatelessWidget {
   final PetController petController;
   final RewardController rewardController;
 
-  const _FoodPickerSheet({
+  const PetFoodPickerSheet({
+    super.key,
     required this.petController,
     required this.rewardController,
   });

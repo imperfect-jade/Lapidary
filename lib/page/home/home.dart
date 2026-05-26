@@ -6,6 +6,7 @@ import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/page/calendar/calendar.dart';
 import 'package:todolist/page/pet/pet.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
+import 'package:todolist/page/pet/widgets/pet_global_feedback_overlay.dart';
 import 'package:todolist/page/pomodoro/pomodoro.dart';
 import 'package:todolist/page/quadrant/quadrant.dart';
 import 'package:todolist/page/task/task.dart';

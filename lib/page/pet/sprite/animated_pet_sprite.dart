@@ -1,16 +1,33 @@
-part of '../pet.dart';
+import 'dart:async';
+import 'dart:math';
+import 'dart:ui' as ui;
 
-class _AnimatedPetSprite extends StatefulWidget {
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/features/pet/domain/pet_action.dart';
+import 'package:todolist/features/pet/sprite/pet_sprite_cache.dart';
+import 'package:todolist/features/pet/sprite/pet_sprite_models.dart';
+import 'package:todolist/model/pet/pet.dart';
+import 'package:todolist/page/pet/pet_controller.dart';
+
+import 'sprite_placeholder.dart';
+import 'sprite_sheet_painter.dart';
+
+class AnimatedPetSprite extends StatefulWidget {
   final PetController controller;
   final PetModel pet;
 
-  const _AnimatedPetSprite({required this.controller, required this.pet});
+  const AnimatedPetSprite({
+    super.key,
+    required this.controller,
+    required this.pet,
+  });
 
   @override
-  State<_AnimatedPetSprite> createState() => _AnimatedPetSpriteState();
+  State<AnimatedPetSprite> createState() => _AnimatedPetSpriteState();
 }
 
-class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
+class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     with TickerProviderStateMixin {
   late final AnimationController _idleController;
   late final AnimationController _moveController;
@@ -56,7 +73,7 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
   }
 
   @override
-  void didUpdateWidget(covariant _AnimatedPetSprite oldWidget) {
+  void didUpdateWidget(covariant AnimatedPetSprite oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.pet.species != widget.pet.species) {
       _loadSprite();
@@ -407,13 +424,13 @@ class _AnimatedPetSpriteState extends State<_AnimatedPetSprite>
                 child: Transform.scale(
                   scaleX: scaleX,
                   child: image == null || spec == null || animation == null
-                      ? _SpriteLoadPlaceholder(
+                      ? SpriteLoadPlaceholder(
                           failed: _spriteLoadFailed,
                           size: displaySize,
                         )
                       : CustomPaint(
                           size: displaySize,
-                          painter: _SpriteSheetPainter(
+                          painter: SpriteSheetPainter(
                             image: image,
                             row: animation.row,
                             frame: _frameIndex % animation.frames,

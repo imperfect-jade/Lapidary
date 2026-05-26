@@ -1,4 +1,14 @@
-part of '../pet.dart';
+import 'dart:async';
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/constants/theme.dart';
+import 'package:todolist/features/pet/domain/pet_action.dart';
+import 'package:todolist/features/pet/sprite/pet_sprite_models.dart';
+import 'package:todolist/page/pet/pet_controller.dart';
+
+import 'pet_global_feedback_overlay.dart';
 
 class PetFocusCompanionCard extends StatefulWidget {
   final String? taskTitle;
@@ -110,7 +120,7 @@ class _PetFocusCompanionCardState extends State<PetFocusCompanionCard> {
                         ),
                       ),
                     ),
-                    _MiniPetSprite(
+                    MiniPetSprite(
                       key: ValueKey('focus-${pet.species}'),
                       controller: controller,
                       action: PetAction.idle,

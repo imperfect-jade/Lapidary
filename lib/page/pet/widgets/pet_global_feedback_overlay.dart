@@ -1,4 +1,15 @@
-part of '../pet.dart';
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/features/pet/domain/pet_action.dart';
+import 'package:todolist/features/pet/domain/pet_overlay_event.dart';
+import 'package:todolist/features/pet/sprite/pet_sprite_cache.dart';
+import 'package:todolist/features/pet/sprite/pet_sprite_models.dart';
+import 'package:todolist/model/pet/pet.dart';
+import 'package:todolist/page/pet/pet_controller.dart';
+
+import '../sprite/sprite_sheet_painter.dart';
 
 class PetGlobalFeedbackOverlay extends StatefulWidget {
   const PetGlobalFeedbackOverlay({super.key});
@@ -149,7 +160,7 @@ class _PetOverlayCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  _MiniPetSprite(controller: controller, action: event.action),
+                  MiniPetSprite(controller: controller, action: event.action),
                   Positioned(
                     right: 2,
                     top: 4,
@@ -195,12 +206,12 @@ class _PetOverlayCard extends StatelessWidget {
   }
 }
 
-class _MiniPetSprite extends StatefulWidget {
+class MiniPetSprite extends StatefulWidget {
   final PetController controller;
   final PetAction action;
   final PetSpriteActionKey? spriteAction;
 
-  const _MiniPetSprite({
+  const MiniPetSprite({
     super.key,
     required this.controller,
     required this.action,
@@ -208,10 +219,10 @@ class _MiniPetSprite extends StatefulWidget {
   });
 
   @override
-  State<_MiniPetSprite> createState() => _MiniPetSpriteState();
+  State<MiniPetSprite> createState() => _MiniPetSpriteState();
 }
 
-class _MiniPetSpriteState extends State<_MiniPetSprite> {
+class _MiniPetSpriteState extends State<MiniPetSprite> {
   Timer? _frameTimer;
   int _frameIndex = 0;
   CachedPetSprite? _sprite;
@@ -225,7 +236,7 @@ class _MiniPetSpriteState extends State<_MiniPetSprite> {
   }
 
   @override
-  void didUpdateWidget(covariant _MiniPetSprite oldWidget) {
+  void didUpdateWidget(covariant MiniPetSprite oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller.pet.value?.species !=
         widget.controller.pet.value?.species) {
@@ -314,7 +325,7 @@ class _MiniPetSpriteState extends State<_MiniPetSprite> {
     final animation = sprite.spec.animationFor(action);
     return CustomPaint(
       size: sprite.spec.displaySize,
-      painter: _SpriteSheetPainter(
+      painter: SpriteSheetPainter(
         image: sprite.image,
         row: animation.row,
         frame: _frameIndex % animation.frames,

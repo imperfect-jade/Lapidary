@@ -1,10 +1,18 @@
-part of '../pet.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/features/pet/domain/pet_action.dart';
+import 'package:todolist/model/pet/pet.dart';
+import 'package:todolist/page/pet/pet_controller.dart';
 
-class _PetFeedbackOverlay extends StatelessWidget {
+class PetFeedbackOverlay extends StatelessWidget {
   final PetController controller;
   final PetModel pet;
 
-  const _PetFeedbackOverlay({required this.controller, required this.pet});
+  const PetFeedbackOverlay({
+    super.key,
+    required this.controller,
+    required this.pet,
+  });
 
   @override
   Widget build(BuildContext context) {

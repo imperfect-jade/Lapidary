@@ -1,9 +1,9 @@
-part of '../pet.dart';
+import 'package:flutter/material.dart';
 
-class _MessageBubble extends StatelessWidget {
+class PetMessageBubble extends StatelessWidget {
   final String message;
 
-  const _MessageBubble({required this.message});
+  const PetMessageBubble({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {

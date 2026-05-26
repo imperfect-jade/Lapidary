@@ -1,33 +1,15 @@
-import 'dart:async';
-import 'dart:math';
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:todolist/constants/theme.dart';
-import 'package:todolist/features/pet/domain/pet_action.dart';
-import 'package:todolist/features/pet/domain/pet_food.dart';
-import 'package:todolist/features/pet/domain/pet_overlay_event.dart';
-import 'package:todolist/features/pet/services/pet_food_catalog.dart';
-import 'package:todolist/features/pet/sprite/pet_sprite_cache.dart';
-import 'package:todolist/features/pet/sprite/pet_sprite_models.dart';
-import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
 import 'package:todolist/page/pet/reward_controller.dart';
 
-part 'sprite/animated_pet_sprite.dart';
-part 'sprite/sprite_feedback.dart';
-part 'sprite/sprite_placeholder.dart';
-part 'sprite/sprite_sheet_painter.dart';
-part 'widgets/action_bar.dart';
-part 'widgets/food_picker_sheet.dart';
-part 'widgets/growth_panel.dart';
-part 'widgets/message_bubble.dart';
-part 'widgets/pet_stage.dart';
-part 'widgets/pet_focus_companion_card.dart';
-part 'widgets/pet_global_feedback_overlay.dart';
-part 'widgets/reward_shop_panel.dart';
-part 'widgets/status_grid.dart';
+import 'widgets/action_bar.dart';
+import 'widgets/growth_panel.dart';
+import 'widgets/message_bubble.dart';
+import 'widgets/pet_stage.dart';
+import 'widgets/reward_shop_panel.dart';
+import 'widgets/status_grid.dart';
 
 // 像素宠物页面
 class PetPage extends StatefulWidget {
@@ -86,21 +68,21 @@ class _PetPageState extends State<PetPage> {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                _MessageBubble(message: controller.message.value),
+                PetMessageBubble(message: controller.message.value),
                 const SizedBox(height: 18),
-                _PetStage(controller: controller, pet: pet),
+                PetStage(controller: controller, pet: pet),
                 const SizedBox(height: 18),
-                _GrowthPanel(controller: controller, pet: pet),
+                PetGrowthPanel(controller: controller, pet: pet),
                 const SizedBox(height: 14),
-                _StatusGrid(pet: pet),
+                PetStatusGrid(pet: pet),
                 const SizedBox(height: 14),
-                _ActionBar(
+                PetActionBar(
                   controller: controller,
                   pet: pet,
                   rewardController: rewardController,
                 ),
                 const SizedBox(height: 14),
-                _RewardShopPanel(
+                PetRewardShopPanel(
                   petController: controller,
                   rewardController: rewardController,
                 ),

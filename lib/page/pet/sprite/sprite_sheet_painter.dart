@@ -1,13 +1,15 @@
-part of '../pet.dart';
+import 'dart:ui' as ui;
 
-class _SpriteSheetPainter extends CustomPainter {
+import 'package:flutter/material.dart';
+
+class SpriteSheetPainter extends CustomPainter {
   final ui.Image image;
   final int row;
   final int frame;
   final int frameWidth;
   final int frameHeight;
 
-  _SpriteSheetPainter({
+  SpriteSheetPainter({
     required this.image,
     required this.row,
     required this.frame,
@@ -30,7 +32,7 @@ class _SpriteSheetPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _SpriteSheetPainter oldDelegate) {
+  bool shouldRepaint(covariant SpriteSheetPainter oldDelegate) {
     return oldDelegate.image != image ||
         oldDelegate.row != row ||
         oldDelegate.frame != frame ||

@@ -105,6 +105,10 @@ class PetController extends GetxController {
   Timer? _stateTimer;
   Timer? _messageResetTimer;
 
+  static const int _awakeEnergyDecayIntervalMinutes = 10;
+  static const int _focusEnergyCostIntervalMinutes = 5;
+  static const int _breakEnergyRestoreIntervalMinutes = 2;
+
   int get expToNextLevel => (pet.value?.level ?? 1) * 40;
 
   double get expProgress {
@@ -157,9 +161,19 @@ class PetController extends GetxController {
 
     currentPet.hunger = _clampStat(currentPet.hunger - elapsedMinutes);
     currentPet.mood = _clampStat(currentPet.mood - elapsedMinutes);
-    currentPet.energy = currentPet.isSleeping
-        ? _clampStat(currentPet.energy + elapsedMinutes * 2)
-        : _clampStat(currentPet.energy - (elapsedMinutes ~/ 3));
+    if (currentPet.isSleeping) {
+      currentPet.energy = _clampStat(currentPet.energy + elapsedMinutes * 2);
+      currentPet.energyDecayRemainderMinutes = 0;
+    } else {
+      final accumulatedMinutes =
+          currentPet.energyDecayRemainderMinutes + elapsedMinutes;
+      final energyCost = accumulatedMinutes ~/ _awakeEnergyDecayIntervalMinutes;
+      currentPet.energyDecayRemainderMinutes =
+          accumulatedMinutes % _awakeEnergyDecayIntervalMinutes;
+      if (energyCost > 0) {
+        currentPet.energy = _clampStat(currentPet.energy - energyCost);
+      }
+    }
     currentPet.lastInteractionAt = now;
 
     if (currentPet.energy >= 100 && currentPet.isSleeping) {
@@ -229,6 +243,52 @@ class PetController extends GetxController {
     _showTemporaryMessage('${currentPet.name}正在陪你专注，先守住$target。');
   }
 
+  Future<void> applyFocusEnergyCost(PomodoroModel record) async {
+    if (record.type != 'focus') {
+      return;
+    }
+    final currentPet = pet.value;
+    if (currentPet == null) {
+      return;
+    }
+
+    final energyCost = _timedStatUnits(
+      actualSeconds: record.actualSeconds,
+      intervalMinutes: _focusEnergyCostIntervalMinutes,
+    );
+    if (energyCost <= 0) {
+      return;
+    }
+
+    await refreshPetState();
+    currentPet.energy = _clampStat(currentPet.energy - energyCost);
+    currentPet.lastInteractionAt = DateTime.now();
+    await _saveAndNotify();
+  }
+
+  Future<void> restoreBreakEnergy(PomodoroModel record) async {
+    if (record.type != 'break' || !record.isCompleted) {
+      return;
+    }
+    final currentPet = pet.value;
+    if (currentPet == null) {
+      return;
+    }
+
+    final energyBoost = _timedStatUnits(
+      actualSeconds: record.actualSeconds,
+      intervalMinutes: _breakEnergyRestoreIntervalMinutes,
+    );
+    if (energyBoost <= 0) {
+      return;
+    }
+
+    await refreshPetState();
+    currentPet.energy = _clampStat(currentPet.energy + energyBoost);
+    currentPet.lastInteractionAt = DateTime.now();
+    await _saveAndNotify();
+  }
+
   Future<void> celebrateFocusCompletion(
     PomodoroModel record,
     int reward,
@@ -245,7 +305,6 @@ class PetController extends GetxController {
     }
     const moodBoost = 6;
     currentPet.mood = _clampStat(currentPet.mood + moodBoost);
-    currentPet.energy = _clampStat(currentPet.energy - 4);
     currentPet.lastInteractionAt = DateTime.now();
     _gainExp(8);
 
@@ -274,8 +333,10 @@ class PetController extends GetxController {
       currentPet.isSleeping = true;
     }
     final moodBoost = _taskMoodBoost(task);
+    final expReward = _taskExpReward(task);
     final messageText = _taskCompletionMessage(currentPet, task);
     currentPet.mood = _clampStat(currentPet.mood + moodBoost);
+    _gainExp(expReward);
     currentPet.lastInteractionAt = DateTime.now();
     action.value = PetAction.taskComplete;
     _emitFeedback(PetAction.taskComplete);
@@ -352,6 +413,9 @@ class PetController extends GetxController {
 
     await refreshPetState();
     currentPet.isSleeping = !currentPet.isSleeping;
+    if (currentPet.isSleeping) {
+      currentPet.energyDecayRemainderMinutes = 0;
+    }
     currentPet.lastInteractionAt = DateTime.now();
     action.value = currentPet.isSleeping ? PetAction.sleep : PetAction.idle;
     _emitFeedback(currentPet.isSleeping ? PetAction.sleep : PetAction.idle);
@@ -360,9 +424,6 @@ class PetController extends GetxController {
           ? '${currentPet.name}蜷起来睡觉了'
           : '${currentPet.name}醒来陪你啦',
     );
-    if (!currentPet.isSleeping) {
-      _gainExp(4);
-    }
     await _saveAndNotify();
   }
 
@@ -478,6 +539,21 @@ class PetController extends GetxController {
     }
   }
 
+  int _taskExpReward(TaskModel task) {
+    switch (task.priority) {
+      case 1:
+        return 16;
+      case 3:
+        return 12;
+      case 2:
+        return 8;
+      case 4:
+        return 4;
+      default:
+        return 6;
+    }
+  }
+
   String _taskCompletionMessage(PetModel currentPet, TaskModel task) {
     if (task.priority == 1 || task.priority == 3) {
       return '这件重要的事被你拿下了，${currentPet.name}超开心！';
@@ -506,6 +582,18 @@ class PetController extends GetxController {
 
   int _clampStat(int value) {
     return value.clamp(0, 100).toInt();
+  }
+
+  int _timedStatUnits({
+    required int actualSeconds,
+    required int intervalMinutes,
+  }) {
+    if (actualSeconds <= 0 || intervalMinutes <= 0) {
+      return 0;
+    }
+    final secondsPerUnit = intervalMinutes * 60;
+    final units = actualSeconds ~/ secondsPerUnit;
+    return units > 0 ? units : 1;
   }
 
   @override

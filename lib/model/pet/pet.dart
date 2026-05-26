@@ -39,6 +39,9 @@ class PetModel extends HiveObject {
   @HiveField(9)
   DateTime lastInteractionAt;
 
+  @HiveField(10, defaultValue: 0)
+  int energyDecayRemainderMinutes;
+
   PetModel({
     required this.id,
     required this.species,
@@ -50,6 +53,7 @@ class PetModel extends HiveObject {
     required this.energy,
     required this.isSleeping,
     required this.lastInteractionAt,
+    this.energyDecayRemainderMinutes = 0,
   });
 
   factory PetModel.defaultCat() {
@@ -64,6 +68,7 @@ class PetModel extends HiveObject {
       energy: 80,
       isSleeping: false,
       lastInteractionAt: DateTime.now(),
+      energyDecayRemainderMinutes: 0,
     );
   }
 }

@@ -32,7 +32,7 @@ class PomodoroController extends GetxController {
   // ========== 内部变量 ==========
   Timer? _timer;
   DateTime? _startTime;
-  int _accumulatedSeconds = 0; // 累计专注秒数
+  int _accumulatedSeconds = 0; // 累计当前计时秒数
 
   // Hive Box
   late Box<PomodoroModel> pomodoroBox;
@@ -92,10 +92,7 @@ class PomodoroController extends GetxController {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (remainingSeconds.value > 0) {
         remainingSeconds.value--;
-        if (currentMode.value == 'focus' && !isPaused.value) {
-          // 累计专注秒数
-          _accumulatedSeconds++;
-        }
+        _accumulatedSeconds++;
       } else {
         _onTimerComplete(); // 定时器完成
       }
@@ -149,9 +146,7 @@ class PomodoroController extends GetxController {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (remainingSeconds.value > 0) {
         remainingSeconds.value--;
-        if (currentMode.value == 'focus') {
-          _accumulatedSeconds++;
-        }
+        _accumulatedSeconds++;
       } else {
         _onTimerComplete();
       }
@@ -199,6 +194,14 @@ class PomodoroController extends GetxController {
     );
 
     await pomodoroBox.put(record.id, record);
+    if (Get.isRegistered<PetController>()) {
+      final petController = Get.find<PetController>();
+      if (mode == 'focus') {
+        await petController.applyFocusEnergyCost(record);
+      } else if (mode == 'break' && isCompleted) {
+        await petController.restoreBreakEnergy(record);
+      }
+    }
     if (isCompleted && Get.isRegistered<RewardController>()) {
       final reward = await Get.find<RewardController>().awardPomodoro(record);
       if (reward > 0 && mode == 'focus') {

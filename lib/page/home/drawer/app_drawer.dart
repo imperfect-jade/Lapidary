@@ -17,7 +17,7 @@ class _AppDrawer extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
               color: TaskTheme.appBarColor,
               child: const Text(
-                '待办陪伴',
+                '琢玉',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
             ),
@@ -43,6 +43,14 @@ class _AppDrawer extends StatelessWidget {
               onTap: () {
                 Get.back();
                 _showPetSettingsSheet();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.menu_book_outlined),
+              title: const Text('使用指南'),
+              onTap: () {
+                Get.back();
+                Get.to(() => const _UserGuidePage());
               },
             ),
             ListTile(

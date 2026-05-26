@@ -1,11 +1,18 @@
-part of '../task.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/constants/task_priority.dart';
+import 'package:todolist/model/task/task.dart';
+import 'package:todolist/page/task/task_controller.dart';
+import 'package:todolist/page/task/utils/formatters.dart';
+import 'package:todolist/page/task/widgets/task_chips.dart';
 
-class _TaskCard extends StatelessWidget {
+class TaskCard extends StatelessWidget {
   final TaskModel task;
   final TaskController controller;
   final VoidCallback onTap;
 
-  const _TaskCard({
+  const TaskCard({
+    super.key,
     required this.task,
     required this.controller,
     required this.onTap,
@@ -43,7 +50,7 @@ class _TaskCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            _TaskBadge(label: TaskType.labelOf(task.taskType)),
+            TaskBadge(label: TaskType.labelOf(task.taskType)),
           ],
         ),
         subtitle: Padding(
@@ -65,19 +72,19 @@ class _TaskCard extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 4,
                 children: [
-                  _InfoChip(
+                  TaskInfoChip(
                     icon: Icons.schedule,
-                    label: '截止 ${_formatDateTime(task.deadline)}',
+                    label: '截止 ${formatTaskDateTime(task.deadline)}',
                   ),
-                  _InfoChip(
+                  TaskInfoChip(
                     icon: Icons.flag,
                     label: priority.label,
                     color: priority.color,
                   ),
                   if (task.hasFocusTarget)
-                    _InfoChip(
+                    TaskInfoChip(
                       icon: Icons.timer_outlined,
-                      label: _formatFocusTarget(task),
+                      label: formatTaskFocusTarget(task),
                     ),
                 ],
               ),

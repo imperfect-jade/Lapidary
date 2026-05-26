@@ -1,9 +1,12 @@
-part of '../task.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/constants/task_priority.dart';
+import 'package:todolist/model/task/task.dart';
 
-class _PrioritySelector extends StatelessWidget {
+class TaskPrioritySelector extends StatelessWidget {
   final RxInt selectedPriority;
 
-  const _PrioritySelector({required this.selectedPriority});
+  const TaskPrioritySelector({super.key, required this.selectedPriority});
 
   @override
   Widget build(BuildContext context) {
@@ -66,10 +69,10 @@ class _PrioritySelector extends StatelessWidget {
   }
 }
 
-class _TaskTypeSelector extends StatelessWidget {
+class TaskTypeSelector extends StatelessWidget {
   final RxString selectedType;
 
-  const _TaskTypeSelector({required this.selectedType});
+  const TaskTypeSelector({super.key, required this.selectedType});
 
   @override
   Widget build(BuildContext context) {
@@ -95,10 +98,10 @@ class _TaskTypeSelector extends StatelessWidget {
   }
 }
 
-class _DeadlineSelector extends StatelessWidget {
+class TaskDeadlineSelector extends StatelessWidget {
   final Rx<DateTime> selectedDeadline;
 
-  const _DeadlineSelector({required this.selectedDeadline});
+  const TaskDeadlineSelector({super.key, required this.selectedDeadline});
 
   @override
   Widget build(BuildContext context) {
@@ -165,11 +168,12 @@ class _DeadlineSelector extends StatelessWidget {
   }
 }
 
-class _FocusTargetSelector extends StatelessWidget {
+class TaskFocusTargetSelector extends StatelessWidget {
   final RxString selectedPeriod;
   final TextEditingController minutesController;
 
-  const _FocusTargetSelector({
+  const TaskFocusTargetSelector({
+    super.key,
     required this.selectedPeriod,
     required this.minutesController,
   });

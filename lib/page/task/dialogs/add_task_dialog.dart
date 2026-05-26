@@ -1,6 +1,10 @@
-part of '../task.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/model/task/task.dart';
+import 'package:todolist/page/task/task_controller.dart';
+import 'package:todolist/page/task/widgets/task_form_fields.dart';
 
-void _showAddTaskDialog(TaskController controller) {
+void showAddTaskDialog(TaskController controller) {
   final titleController = TextEditingController();
   final descriptionController = TextEditingController();
   final focusTargetController = TextEditingController();
@@ -51,18 +55,18 @@ void _showAddTaskDialog(TaskController controller) {
                 maxLines: 2,
               ),
               const SizedBox(height: 10),
-              _PrioritySelector(selectedPriority: selectedPriority),
+              TaskPrioritySelector(selectedPriority: selectedPriority),
               const SizedBox(height: 10),
-              _TaskTypeSelector(selectedType: selectedType),
+              TaskTypeSelector(selectedType: selectedType),
               const SizedBox(height: 10),
-              _DeadlineSelector(selectedDeadline: selectedDeadline),
+              TaskDeadlineSelector(selectedDeadline: selectedDeadline),
               Obx(() {
                 if (selectedType.value == TaskType.day) {
                   return const SizedBox.shrink();
                 }
                 return Padding(
                   padding: const EdgeInsets.only(top: 10),
-                  child: _FocusTargetSelector(
+                  child: TaskFocusTargetSelector(
                     selectedPeriod: selectedFocusPeriod,
                     minutesController: focusTargetController,
                   ),

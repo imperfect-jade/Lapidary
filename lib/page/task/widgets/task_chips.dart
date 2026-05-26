@@ -1,9 +1,10 @@
-part of '../task.dart';
+import 'package:flutter/material.dart';
+import 'package:todolist/constants/theme.dart';
 
-class _TaskBadge extends StatelessWidget {
+class TaskBadge extends StatelessWidget {
   final String label;
 
-  const _TaskBadge({required this.label});
+  const TaskBadge({super.key, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -21,12 +22,17 @@ class _TaskBadge extends StatelessWidget {
   }
 }
 
-class _InfoChip extends StatelessWidget {
+class TaskInfoChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color? color;
 
-  const _InfoChip({required this.icon, required this.label, this.color});
+  const TaskInfoChip({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.color,
+  });
 
   @override
   Widget build(BuildContext context) {

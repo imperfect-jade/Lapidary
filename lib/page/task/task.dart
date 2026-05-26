@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:todolist/constants/task_priority.dart';
 import 'package:todolist/constants/theme.dart';
 import 'package:todolist/model/task/task.dart';
+import 'package:todolist/page/task/dialogs/add_task_dialog.dart';
+import 'package:todolist/page/task/dialogs/task_detail_dialog.dart';
 import 'package:todolist/page/task/task_controller.dart';
-
-part 'dialogs/add_task_dialog.dart';
-part 'dialogs/task_detail_dialog.dart';
-part 'utils/formatters.dart';
-part 'widgets/task_card.dart';
-part 'widgets/task_chips.dart';
-part 'widgets/task_form_fields.dart';
-part 'widgets/task_type_filter.dart';
+import 'package:todolist/page/task/widgets/task_card.dart';
+import 'package:todolist/page/task/widgets/task_type_filter.dart';
 
 class TaskPage extends StatelessWidget {
   TaskPage({super.key});
@@ -33,7 +28,7 @@ class TaskPage extends StatelessWidget {
       body: Column(
         children: [
           Obx(
-            () => _TaskTypeFilter(
+            () => TaskTypeFilter(
               selectedType: selectedTaskType.value,
               onSelected: (value) => selectedTaskType.value = value,
             ),
@@ -65,10 +60,10 @@ class TaskPage extends StatelessWidget {
                       final task = tasks[index];
                       return GetBuilder<TaskController>(
                         id: 'task_${task.id}',
-                        builder: (controller) => _TaskCard(
+                        builder: (controller) => TaskCard(
                           task: task,
                           controller: controller,
-                          onTap: () => _showTaskDetailDialog(task),
+                          onTap: () => showTaskDetailDialog(task),
                         ),
                       );
                     },
@@ -80,7 +75,7 @@ class TaskPage extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddTaskDialog(controller),
+        onPressed: () => showAddTaskDialog(controller),
         child: const Icon(Icons.add),
       ),
     );

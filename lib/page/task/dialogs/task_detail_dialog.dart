@@ -1,6 +1,10 @@
-part of '../task.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/constants/task_priority.dart';
+import 'package:todolist/model/task/task.dart';
+import 'package:todolist/page/task/utils/formatters.dart';
 
-void _showTaskDetailDialog(TaskModel task) {
+void showTaskDetailDialog(TaskModel task) {
   final priority = taskPriorityOf(task.priority);
   Get.dialog(
     AlertDialog(
@@ -23,11 +27,11 @@ void _showTaskDetailDialog(TaskModel task) {
               valueColor: task.isCompleted ? Colors.green : Colors.orange,
             ),
             _detailRow('任务类型', TaskType.labelOf(task.taskType)),
-            _detailRow('截止时间', _formatDateTime(task.deadline)),
-            _detailRow('创建时间', _formatDateTime(task.createdAt)),
+            _detailRow('截止时间', formatTaskDateTime(task.deadline)),
+            _detailRow('创建时间', formatTaskDateTime(task.createdAt)),
             _detailRow('优先级', priority.label, valueColor: priority.color),
             if (task.hasFocusTarget)
-              _detailRow('专注目标', _formatFocusTarget(task)),
+              _detailRow('专注目标', formatTaskFocusTarget(task)),
             const SizedBox(height: 12),
             if (task.description != null && task.description!.isNotEmpty) ...[
               const Text('任务描述', style: TextStyle(fontWeight: FontWeight.w600)),

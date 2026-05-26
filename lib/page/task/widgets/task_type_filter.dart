@@ -1,10 +1,16 @@
-part of '../task.dart';
+import 'package:flutter/material.dart';
+import 'package:todolist/constants/theme.dart';
+import 'package:todolist/model/task/task.dart';
 
-class _TaskTypeFilter extends StatelessWidget {
+class TaskTypeFilter extends StatelessWidget {
   final String? selectedType;
   final ValueChanged<String?> onSelected;
 
-  const _TaskTypeFilter({required this.selectedType, required this.onSelected});
+  const TaskTypeFilter({
+    super.key,
+    required this.selectedType,
+    required this.onSelected,
+  });
 
   @override
   Widget build(BuildContext context) {

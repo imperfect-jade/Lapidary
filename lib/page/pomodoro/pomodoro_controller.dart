@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:todolist/data/hive/box_names.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
 import 'package:todolist/page/pet/reward_controller.dart';
@@ -40,7 +41,7 @@ class PomodoroController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    pomodoroBox = Hive.box<PomodoroModel>('pomodoros');
+    pomodoroBox = Hive.box<PomodoroModel>(BoxNames.pomodoros);
     _loadTodayStats();
   }
 

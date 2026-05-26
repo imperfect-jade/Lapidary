@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:todolist/data/hive/box_names.dart';
 
 class AppThemePalette {
   final String key;
@@ -37,7 +38,7 @@ class AppFontOption {
 }
 
 class ThemeController extends GetxController {
-  static const String settingsBoxName = 'settings';
+  static const String settingsBoxName = BoxNames.settings;
   static const String themeKey = 'theme_key';
   static const String bodyFontKey = 'body_font_key';
   static const String defaultThemeKey = 'green';

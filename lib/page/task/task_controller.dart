@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:todolist/data/hive/box_names.dart';
 import 'package:todolist/model/task/task.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
 import 'package:todolist/page/pet/reward_controller.dart';
@@ -26,7 +27,7 @@ class TaskController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    taskBox = Hive.box<TaskModel>('tasks');
+    taskBox = Hive.box<TaskModel>(BoxNames.tasks);
     getTasks();
     _startOverdueTimer();
   }

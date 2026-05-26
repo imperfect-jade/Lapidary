@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:todolist/data/hive/box_names.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
 import 'package:todolist/model/reward/reward_wallet.dart';
 import 'package:todolist/model/task/task.dart';
@@ -23,7 +24,7 @@ class RewardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    rewardBox = Hive.box<RewardWalletModel>('reward_wallet');
+    rewardBox = Hive.box<RewardWalletModel>(BoxNames.rewardWallet);
     _loadWallet();
   }
 

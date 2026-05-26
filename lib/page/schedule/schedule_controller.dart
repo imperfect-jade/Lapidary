@@ -1,11 +1,12 @@
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:todolist/data/hive/box_names.dart';
 import 'package:todolist/model/schedule/schedule.dart';
 
 enum CalendarContentView { month, schedule }
 
 class ScheduleController extends GetxController {
-  static const String semesterBoxName = 'schedule_semesters';
+  static const String semesterBoxName = BoxNames.scheduleSemesters;
 
   final viewMode = CalendarContentView.month.obs;
   final semesters = <ScheduleSemesterModel>[].obs;

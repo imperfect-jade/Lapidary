@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:todolist/data/hive/box_names.dart';
 import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
 import 'package:todolist/model/task/task.dart';
@@ -122,7 +123,7 @@ class PetController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    petBox = Hive.box<PetModel>('pets');
+    petBox = Hive.box<PetModel>(BoxNames.pets);
     _loadPet();
     _startStateTimer();
   }

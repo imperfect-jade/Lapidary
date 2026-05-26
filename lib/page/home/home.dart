@@ -26,7 +26,7 @@ part 'sheets/settings_sheet.dart';
 class HomePage extends StatelessWidget {
   HomePage({super.key});
   //获取控制器
-  final HomeController controller = Get.put(HomeController());
+  final HomeController controller = Get.find<HomeController>();
   late final List<Widget> _children = _getChildren();
   late final List<BottomNavigationBarItem> _tabBarItems = _getTabBarWidget();
 

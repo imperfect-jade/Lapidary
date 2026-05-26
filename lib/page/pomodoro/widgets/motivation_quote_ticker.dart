@@ -1,13 +1,17 @@
-part of '../pomodoro.dart';
+import 'dart:async';
 
-class _MotivationQuoteTicker extends StatefulWidget {
-  const _MotivationQuoteTicker();
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+class PomodoroMotivationQuoteTicker extends StatefulWidget {
+  const PomodoroMotivationQuoteTicker({super.key});
 
   @override
-  State<_MotivationQuoteTicker> createState() => _MotivationQuoteTickerState();
+  State<PomodoroMotivationQuoteTicker> createState() =>
+      _MotivationQuoteTickerState();
 }
 
-class _MotivationQuoteTickerState extends State<_MotivationQuoteTicker> {
+class _MotivationQuoteTickerState extends State<PomodoroMotivationQuoteTicker> {
   static const String _assetPath = 'lib/assets/text/motivational_quotes.txt';
 
   Timer? _timer;

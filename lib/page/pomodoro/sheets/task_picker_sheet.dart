@@ -1,6 +1,10 @@
-part of '../pomodoro.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/page/task/task_controller.dart';
 
-void _showTaskPicker(
+import '../pomodoro_controller.dart';
+
+void showPomodoroTaskPicker(
   PomodoroController controller,
   TaskController taskController,
 ) {

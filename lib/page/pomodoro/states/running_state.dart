@@ -1,9 +1,17 @@
-part of '../pomodoro.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/page/pet/widgets/pet_focus_companion_card.dart';
 
-class _RunningState extends StatelessWidget {
+import '../pomodoro_controller.dart';
+import '../widgets/mode_label.dart';
+import '../widgets/motivation_quote_ticker.dart';
+import '../widgets/timer_controls.dart';
+import '../widgets/timer_panel.dart';
+
+class PomodoroRunningState extends StatelessWidget {
   final PomodoroController controller;
 
-  const _RunningState({required this.controller});
+  const PomodoroRunningState({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -16,9 +24,9 @@ class _RunningState extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const _MotivationQuoteTicker(),
+                const PomodoroMotivationQuoteTicker(),
                 const SizedBox(height: 24),
-                _ModeLabel(controller: controller),
+                PomodoroModeLabel(controller: controller),
                 Obx(() {
                   if (controller.currentMode.value != 'focus') {
                     return const SizedBox(height: 18);
@@ -30,11 +38,11 @@ class _RunningState extends StatelessWidget {
                     ),
                   );
                 }),
-                _TimerProgress(controller: controller),
+                PomodoroTimerProgress(controller: controller),
                 const SizedBox(height: 24),
-                _RunningTaskInfo(controller: controller),
+                PomodoroRunningTaskInfo(controller: controller),
                 const SizedBox(height: 36),
-                _TimerControls(controller: controller),
+                PomodoroTimerControls(controller: controller),
               ],
             ),
           ),

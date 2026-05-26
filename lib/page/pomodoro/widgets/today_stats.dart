@@ -1,9 +1,12 @@
-part of '../pomodoro.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
-class _TodayStats extends StatelessWidget {
+import '../pomodoro_controller.dart';
+
+class PomodoroTodayStats extends StatelessWidget {
   final PomodoroController controller;
 
-  const _TodayStats({required this.controller});
+  const PomodoroTodayStats({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {

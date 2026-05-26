@@ -1,4 +1,9 @@
-part of '../pomodoro.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import '../dialogs/settings_dialog.dart';
+import '../pomodoro_controller.dart';
+import 'hints.dart';
 
 class _TimerPanel extends StatelessWidget {
   final Widget child;
@@ -31,10 +36,10 @@ class _TimerPanel extends StatelessWidget {
   }
 }
 
-class _RunningTaskInfo extends StatelessWidget {
+class PomodoroRunningTaskInfo extends StatelessWidget {
   final PomodoroController controller;
 
-  const _RunningTaskInfo({required this.controller});
+  const PomodoroRunningTaskInfo({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +94,7 @@ class _IdleTimerLabel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const _TimerSettingsHint(),
+          const PomodoroTimerSettingsHint(),
         ],
       ),
     );
@@ -127,7 +132,7 @@ class _RunningTimerLabel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const _TimerSettingsHint(),
+          const PomodoroTimerSettingsHint(),
         ],
       ),
     );
@@ -179,16 +184,16 @@ class _SettingsTapTarget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => _showSettings(controller),
+      onTap: () => showPomodoroSettingsDialog(controller),
       child: child,
     );
   }
 }
 
-class _StartCircle extends StatelessWidget {
+class PomodoroStartCircle extends StatelessWidget {
   final PomodoroController controller;
 
-  const _StartCircle({required this.controller});
+  const PomodoroStartCircle({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -205,10 +210,10 @@ class _StartCircle extends StatelessWidget {
   }
 }
 
-class _TimerProgress extends StatelessWidget {
+class PomodoroTimerProgress extends StatelessWidget {
   final PomodoroController controller;
 
-  const _TimerProgress({required this.controller});
+  const PomodoroTimerProgress({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {

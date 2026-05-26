@@ -1,10 +1,19 @@
-part of '../pomodoro.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:todolist/page/task/task_controller.dart';
 
-class _TaskSelector extends StatelessWidget {
+import '../pomodoro_controller.dart';
+import '../sheets/task_picker_sheet.dart';
+
+class PomodoroTaskSelector extends StatelessWidget {
   final PomodoroController controller;
   final TaskController taskController;
 
-  const _TaskSelector({required this.controller, required this.taskController});
+  const PomodoroTaskSelector({
+    super.key,
+    required this.controller,
+    required this.taskController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +55,7 @@ class _TaskSelector extends StatelessWidget {
       }
 
       return OutlinedButton.icon(
-        onPressed: () => _showTaskPicker(controller, taskController),
+        onPressed: () => showPomodoroTaskPicker(controller, taskController),
         icon: const Icon(Icons.add_task),
         label: const Text('选择要专注的任务（可选）'),
         style: OutlinedButton.styleFrom(

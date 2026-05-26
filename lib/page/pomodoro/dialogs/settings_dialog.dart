@@ -1,6 +1,9 @@
-part of '../pomodoro.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
-void _showSettings(PomodoroController controller) {
+import '../pomodoro_controller.dart';
+
+void showPomodoroSettingsDialog(PomodoroController controller) {
   Get.dialog(
     AlertDialog(
       title: const Text('番茄钟设置'),

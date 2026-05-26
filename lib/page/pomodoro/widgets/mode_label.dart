@@ -1,9 +1,12 @@
-part of '../pomodoro.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
-class _ModeLabel extends StatelessWidget {
+import '../pomodoro_controller.dart';
+
+class PomodoroModeLabel extends StatelessWidget {
   final PomodoroController controller;
 
-  const _ModeLabel({required this.controller});
+  const PomodoroModeLabel({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {

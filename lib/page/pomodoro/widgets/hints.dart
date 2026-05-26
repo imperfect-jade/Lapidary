@@ -1,7 +1,7 @@
-part of '../pomodoro.dart';
+import 'package:flutter/material.dart';
 
-class _PomodoroHint extends StatelessWidget {
-  const _PomodoroHint();
+class PomodoroHint extends StatelessWidget {
+  const PomodoroHint({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -24,8 +24,8 @@ class _PomodoroHint extends StatelessWidget {
   }
 }
 
-class _TimerSettingsHint extends StatelessWidget {
-  const _TimerSettingsHint();
+class PomodoroTimerSettingsHint extends StatelessWidget {
+  const PomodoroTimerSettingsHint({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -1,9 +1,12 @@
-part of '../pomodoro.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
-class _TimerControls extends StatelessWidget {
+import '../pomodoro_controller.dart';
+
+class PomodoroTimerControls extends StatelessWidget {
   final PomodoroController controller;
 
-  const _TimerControls({required this.controller});
+  const PomodoroTimerControls({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {

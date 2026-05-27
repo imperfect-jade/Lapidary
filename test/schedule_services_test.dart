@@ -50,6 +50,10 @@ void main() {
       expect(secondWeek!.oddEvenIndex, 1);
       expect(secondWeek.weekNumber, 2);
       expect(outside, isNull);
+      expect(
+        ScheduleDateService.dayContextForDate(semester, DateTime(2026, 5, 5)),
+        isNull,
+      );
     });
 
     test('filters sessions for a date', () {
@@ -103,6 +107,10 @@ void main() {
       );
 
       expect(sessions.map((session) => session.id), ['custom', 'odd']);
+      expect(
+        ScheduleDateService.sessionsForDate(semester, DateTime(2026, 5, 5)),
+        isEmpty,
+      );
     });
   });
 
@@ -147,6 +155,22 @@ void main() {
       expect(blocks[2].end, 9);
       expect(blocks[2].sessions.single.id, 'same');
       expect(blocks[2].sessions.single.time, [8, 9]);
+    });
+
+    test('keeps non-overlapping sessions as separate ordered blocks', () {
+      final blocks = ScheduleLayoutService.buildBlocks([
+        _session(id: 'late', name: 'Late', time: [6, 7]),
+        _session(id: 'early', name: 'Early', time: [1, 2]),
+        _session(id: 'middle', name: 'Middle', time: [4]),
+      ]);
+
+      expect(blocks.map((block) => block.start), [1, 4, 6]);
+      expect(blocks.map((block) => block.end), [2, 4, 7]);
+      expect(blocks.map((block) => block.sessions.single.id), [
+        'early',
+        'middle',
+        'late',
+      ]);
     });
   });
 

@@ -4,10 +4,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:todolist/data/hive/box_names.dart';
 import 'package:todolist/data/repositories/pet_repository.dart';
+import 'package:todolist/data/repositories/pomodoro_repository.dart';
 import 'package:todolist/data/repositories/reward_repository.dart';
+import 'package:todolist/data/repositories/schedule_repository.dart';
 import 'package:todolist/data/repositories/task_repository.dart';
+import 'package:todolist/data/repositories/theme_settings_repository.dart';
 import 'package:todolist/model/pet/pet.dart';
+import 'package:todolist/model/pomodoro/pomodoro.dart';
 import 'package:todolist/model/reward/reward_wallet.dart';
+import 'package:todolist/model/schedule/schedule.dart';
 import 'package:todolist/model/task/task.dart';
 
 void main() {
@@ -19,17 +24,26 @@ void main() {
     );
     Hive.init(tempDir.path);
     _registerAdapter(TaskModelAdapter());
+    _registerAdapter(PomodoroModelAdapter());
     _registerAdapter(PetModelAdapter());
     _registerAdapter(RewardWalletModelAdapter());
+    _registerAdapter(ScheduleSessionModelAdapter());
+    _registerAdapter(ScheduleSemesterModelAdapter());
     await Hive.openBox<TaskModel>(BoxNames.tasks);
+    await Hive.openBox<PomodoroModel>(BoxNames.pomodoros);
     await Hive.openBox<PetModel>(BoxNames.pets);
     await Hive.openBox<RewardWalletModel>(BoxNames.rewardWallet);
+    await Hive.openBox<ScheduleSemesterModel>(BoxNames.scheduleSemesters);
+    await Hive.openBox<dynamic>(BoxNames.settings);
   });
 
   tearDown(() async {
     await Hive.box<TaskModel>(BoxNames.tasks).clear();
+    await Hive.box<PomodoroModel>(BoxNames.pomodoros).clear();
     await Hive.box<PetModel>(BoxNames.pets).clear();
     await Hive.box<RewardWalletModel>(BoxNames.rewardWallet).clear();
+    await Hive.box<ScheduleSemesterModel>(BoxNames.scheduleSemesters).clear();
+    await Hive.box<dynamic>(BoxNames.settings).clear();
   });
 
   tearDownAll(() async {
@@ -83,6 +97,60 @@ void main() {
     wallet.points = 42;
     await repository.save(wallet);
     expect((await repository.getWallet()).points, 42);
+  });
+
+  test('PomodoroRepository stores and reads records', () async {
+    final repository = PomodoroRepository();
+    final record = PomodoroModel(
+      id: 'pomodoro-1',
+      taskId: 'task-1',
+      taskTitle: 'Task',
+      durationMinutes: 25,
+      actualSeconds: 1500,
+      startTime: DateTime(2026, 5, 26, 10),
+      endTime: DateTime(2026, 5, 26, 10, 25),
+      isCompleted: true,
+      type: 'focus',
+    );
+
+    await repository.put(record);
+
+    expect(repository.getAll(), hasLength(1));
+    expect(repository.getAll().single.id, 'pomodoro-1');
+  });
+
+  test('ScheduleRepository stores and reads semesters', () async {
+    final repository = ScheduleRepository();
+    final semester = ScheduleSemesterModel(
+      id: 'semester-1',
+      name: 'Semester',
+      sessions: [
+        ScheduleSessionModel(
+          id: 'session-1',
+          name: 'Course',
+          teacher: 'Teacher',
+          dayOfWeek: 1,
+          time: [1, 2],
+          firstHalf: true,
+          oddWeek: true,
+        ),
+      ],
+    );
+
+    await repository.put(semester);
+
+    expect(repository.getAll(), hasLength(1));
+    expect(repository.getAll().single.sessions.single.name, 'Course');
+  });
+
+  test('ThemeSettingsRepository stores theme and body font keys', () async {
+    final repository = ThemeSettingsRepository();
+
+    await repository.setThemeKey('green');
+    await repository.setBodyFontKey('default');
+
+    expect(repository.getThemeKey(), 'green');
+    expect(repository.getBodyFontKey(), 'default');
   });
 }
 

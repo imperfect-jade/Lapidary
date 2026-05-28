@@ -13,6 +13,10 @@ import 'package:todolist/page/pet/pet_controller.dart';
 import 'sprite_placeholder.dart';
 import 'sprite_sheet_painter.dart';
 
+/// 宠物页主舞台精灵组件，负责加载精灵图并播放帧动画。
+///
+/// 它监听 `PetController.action` 播放抚摸、喂食、任务完成等动作，
+/// 同时在 idle 状态下随机播放等待、跳跃、奔跑等环境动作，提升陪伴感。
 class AnimatedPetSprite extends StatefulWidget {
   final PetController controller;
   final PetModel pet;
@@ -29,11 +33,14 @@ class AnimatedPetSprite extends StatefulWidget {
 
 class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     with TickerProviderStateMixin {
+  // idleController 负责轻微上下浮动，moveController 负责舞台内横向移动。
   late final AnimationController _idleController;
   late final AnimationController _moveController;
+  // actionWorker 监听 Controller 动作；两个 Timer 分别推进帧和随机待机行为。
   Worker? _actionWorker;
   Timer? _frameTimer;
   Timer? _behaviorTimer;
+  // 精灵图片和规格来自 PetSpriteCache，加载失败时切换到占位组件。
   ui.Image? _spriteImage;
   PetSpriteSpec? _spriteSpec;
   bool _spriteLoadFailed = false;
@@ -51,21 +58,25 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
   @override
   void initState() {
     super.initState();
+    // 待机浮动让像素宠物即使不移动也有呼吸感，睡眠时节奏更慢。
     _idleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1600),
     )..repeat(reverse: true);
     _wasSleeping = widget.pet.isSleeping;
+    // 横向移动只在随机奔跑动作中启用，结束后回到 idle 行为调度。
     _moveController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2200),
     )..addStatusListener(_handleMoveStatus);
     _actionWorker = ever<PetAction>(
+      // Controller 发出一次性动作时，主舞台会暂停随机待机，优先播放用户反馈。
       widget.controller.action,
       _handlePetActionChanged,
     );
     _loadSprite();
     if (_wasSleeping) {
+      // 睡眠状态下不安排随机动作，精灵保持 sleep/idle 的安静表现。
       _enterSleepMode();
     } else {
       _scheduleNextBehavior(initial: true);
@@ -75,6 +86,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
   @override
   void didUpdateWidget(covariant AnimatedPetSprite oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // 物种切换后重新加载对应精灵图，避免继续显示旧物种动画。
     if (oldWidget.pet.species != widget.pet.species) {
       _loadSprite();
     }
@@ -89,6 +101,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
 
   @override
   void dispose() {
+    // 释放所有动画监听和计时器，防止离开宠物页后继续推进帧。
     _frameTimer?.cancel();
     _behaviorTimer?.cancel();
     _actionWorker?.dispose();
@@ -98,6 +111,9 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     super.dispose();
   }
 
+  /// 加载当前物种的精灵图和规格。
+  ///
+  /// 失败时只切换占位状态，不影响宠物模型和其他页面交互。
   Future<void> _loadSprite() async {
     final species = widget.pet.species;
     try {
@@ -111,6 +127,9 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     }
   }
 
+  /// 使用缓存精灵并覆盖主舞台展示尺寸。
+  ///
+  /// 异步加载返回时会再次检查物种，防止用户切换物种后旧资源覆盖新资源。
   void _useCachedSprite(
     String species,
     CachedPetSprite cached,
@@ -131,6 +150,9 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     _startFrameTimer(spec.animationFor(PetSpriteActionKey.idle));
   }
 
+  /// 启动帧动画计时器。
+  ///
+  /// `holdLastFrame` 用于睡眠动作，让动画播到最后一帧后停住，而不是循环眨动。
   void _startFrameTimer(
     PetSpriteAnimationSpec animation, {
     bool holdLastFrame = false,
@@ -159,6 +181,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     });
   }
 
+  /// 横向移动完成后记录最终位置，并重新进入随机待机行为调度。
   void _handleMoveStatus(AnimationStatus status) {
     if (status != AnimationStatus.completed) {
       return;
@@ -172,6 +195,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     _scheduleNextBehavior();
   }
 
+  /// 切换精灵动作时重置帧索引并同步对应 fps。
   void _syncFrameAction(
     PetSpriteActionKey action,
     PetSpriteAnimationSpec animation,
@@ -186,6 +210,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     }
   }
 
+  /// 根据模型里的睡眠状态进入或退出睡眠动画模式。
   void _syncSleepMode() {
     if (_wasSleeping == widget.pet.isSleeping) {
       return;
@@ -198,6 +223,9 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     }
   }
 
+  /// 响应 Controller 的一次性动作变化。
+  ///
+  /// 用户抚摸、喂食、完成任务或逾期提醒时会暂停随机移动，优先展示反馈动作。
   void _handlePetActionChanged(PetAction action) {
     if (!mounted || widget.pet.isSleeping) {
       return;
@@ -216,6 +244,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     }
   }
 
+  /// 进入睡眠模式：取消随机行为和横向移动，位置回到舞台中心。
   void _enterSleepMode() {
     _behaviorTimer?.cancel();
     _moveController.stop();
@@ -230,6 +259,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     }
   }
 
+  /// 退出睡眠模式：恢复 idle 动作并重新安排随机行为。
   void _exitSleepMode() {
     _lastAction = PetSpriteActionKey.idle;
     _frameIndex = 0;
@@ -239,6 +269,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     _scheduleNextBehavior(initial: true);
   }
 
+  /// 安排下一次待机行为，初次进入时延迟更短，后续随机间隔更自然。
   void _scheduleNextBehavior({bool initial = false}) {
     _behaviorTimer?.cancel();
     if (!mounted || widget.pet.isSleeping) {
@@ -252,6 +283,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     );
   }
 
+  /// 根据随机数选择下一段环境动作：静止、等待、跳跃、原地跑或横向短跑。
   void _chooseNextBehavior() {
     if (!mounted || widget.pet.isSleeping) {
       return;
@@ -285,6 +317,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     }
   }
 
+  /// 更新当前环境动作，动作相同则不触发 rebuild。
   void _setAmbientMotion(AmbientPetMotion motion) {
     if (!mounted || _ambientMotion == motion) {
       return;
@@ -292,6 +325,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     setState(() => _ambientMotion = motion);
   }
 
+  /// 播放一段固定时长的环境动作，结束后回到 idle 并继续调度。
   void _playAmbientFor(AmbientPetMotion motion, Duration duration) {
     _behaviorTimer?.cancel();
     _captureCurrentPosition();
@@ -307,6 +341,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     });
   }
 
+  /// 播放一次横向短跑，移动距离和时长带有随机性。
   void _startRunBurst({required bool toLeft}) {
     _behaviorTimer?.cancel();
     _captureCurrentPosition();
@@ -327,6 +362,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     _moveController.forward(from: 0);
   }
 
+  /// 在打断横向移动前记录当前位置，避免切换动作时精灵瞬移。
   void _captureCurrentPosition() {
     if (!_moveController.isAnimating) {
       return;
@@ -337,6 +373,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
         _positionFactor;
   }
 
+  /// 将业务动作、睡眠状态和环境动作解析为具体精灵行。
   PetSpriteActionKey _resolveSpriteAction(PetAction action) {
     if (action == PetAction.taskComplete) {
       return PetSpriteActionKey.taskComplete;
@@ -369,6 +406,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
     }
   }
 
+  /// 判断某个业务动作是否需要暂停随机待机并播放专属动画。
   bool _usesActionAnimation(PetAction action) {
     return action == PetAction.pet ||
         action == PetAction.feed ||
@@ -379,6 +417,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      // 监听 Controller.action，使按钮操作和跨模块反馈能立即反映到舞台动画。
       final action = widget.controller.action.value;
       if (_loadedSpecies != widget.pet.species && !_spriteLoadFailed) {
         _loadSprite();
@@ -386,6 +425,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
       return LayoutBuilder(
         builder: (context, constraints) {
           return AnimatedBuilder(
+            // 合并浮动和横向移动两个动画源，统一计算最终位移和朝向。
             animation: Listenable.merge([_idleController, _moveController]),
             builder: (context, child) {
               final image = _spriteImage;
@@ -393,6 +433,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
               final spriteAction = _resolveSpriteAction(action);
               final animation = spec?.animationFor(spriteAction);
               if (animation != null) {
+                // build 中只做帧动画同步，不修改宠物模型。
                 _syncFrameAction(spriteAction, animation);
               }
               final idleLift = widget.pet.isSleeping
@@ -420,6 +461,7 @@ class _AnimatedPetSpriteState extends State<AnimatedPetSprite>
               final scaleX = spec?.flipLeft == true && _facingLeft ? -1.0 : 1.0;
 
               return Transform.translate(
+                // 位移叠加横向移动、呼吸浮动和一次性动作弹跳。
                 offset: Offset(walkOffset, actionBounce - idleLift),
                 child: Transform.scale(
                   scaleX: scaleX,

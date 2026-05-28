@@ -10,6 +10,10 @@ import 'package:todolist/page/pet/pet_controller.dart';
 
 import 'pet_global_feedback_overlay.dart';
 
+/// 番茄钟运行态的宠物陪伴卡。
+///
+/// 卡片读取当前宠物名称和物种，展示轻量陪伴文案，并在专注过程中随机播放小动作；
+/// 它不保存记录、不发奖励，只负责陪伴感展示。
 class PetFocusCompanionCard extends StatefulWidget {
   final String? taskTitle;
 
@@ -20,6 +24,7 @@ class PetFocusCompanionCard extends StatefulWidget {
 }
 
 class _PetFocusCompanionCardState extends State<PetFocusCompanionCard> {
+  // 专注陪伴卡只在几个温和动作间随机切换，避免干扰计时主流程。
   static const List<PetSpriteActionKey> _randomActions = [
     PetSpriteActionKey.pet,
     PetSpriteActionKey.waiting,
@@ -33,21 +38,25 @@ class _PetFocusCompanionCardState extends State<PetFocusCompanionCard> {
   @override
   void initState() {
     super.initState();
+    // 首次进入运行态后延迟播放随机动作，保持卡片出现时先稳定展示 idle。
     _scheduleNextAction();
   }
 
   @override
   void dispose() {
+    // 取消随机行为定时器，防止离开番茄钟运行态后继续 setState。
     _behaviorTimer?.cancel();
     super.dispose();
   }
 
+  /// 安排下一次随机陪伴动作，动作间隔故意留出空档，减少视觉噪音。
   void _scheduleNextAction() {
     _behaviorTimer?.cancel();
     final delay = Duration(seconds: 6 + _random.nextInt(7));
     _behaviorTimer = Timer(delay, _playRandomAction);
   }
 
+  /// 播放一个随机动作，结束后回到 idle 并继续安排下一次。
   void _playRandomAction() {
     if (!mounted) {
       return;
@@ -65,6 +74,7 @@ class _PetFocusCompanionCardState extends State<PetFocusCompanionCard> {
     });
   }
 
+  /// 不同动作持续时间不同，用于让喂食/等待等动画完整播放。
   Duration _durationFor(PetSpriteActionKey action) {
     return switch (action) {
       PetSpriteActionKey.pet => const Duration(milliseconds: 1200),
@@ -78,6 +88,7 @@ class _PetFocusCompanionCardState extends State<PetFocusCompanionCard> {
   Widget build(BuildContext context) {
     final controller = Get.find<PetController>();
     return Obx(() {
+      // 宠物尚未加载时不占位，避免番茄钟页面出现空白卡片。
       final pet = controller.pet.value;
       if (pet == null) {
         return const SizedBox.shrink();
@@ -103,6 +114,7 @@ class _PetFocusCompanionCardState extends State<PetFocusCompanionCard> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // 左侧迷你精灵使用全局浮层同一套加载逻辑，并由 _currentAction 指定随机动作。
               SizedBox(
                 width: 74,
                 height: 78,
@@ -131,6 +143,7 @@ class _PetFocusCompanionCardState extends State<PetFocusCompanionCard> {
               ),
               const SizedBox(width: 10),
               Expanded(
+                // 右侧文字根据是否关联任务显示不同陪伴描述，不影响番茄钟记录。
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,

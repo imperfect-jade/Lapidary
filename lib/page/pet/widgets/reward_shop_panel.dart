@@ -7,6 +7,10 @@ import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
 import 'package:todolist/page/pet/reward_controller.dart';
 
+/// 宠物奖励商城，展示积分余额和当前物种可购买的食物。
+///
+/// 商城只消费 `RewardController` 的钱包数据，不直接修改宠物状态；
+/// 购买后的食物会进入库存，真正喂食仍通过操作栏的喂食 Sheet 完成。
 class PetRewardShopPanel extends StatefulWidget {
   final PetController petController;
   final RewardController rewardController;
@@ -22,11 +26,13 @@ class PetRewardShopPanel extends StatefulWidget {
 }
 
 class _RewardShopPanelState extends State<PetRewardShopPanel> {
+  // 折叠状态只影响本面板展示，不写入持久化。
   bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      // 按当前宠物物种切换商城目录，确保猫狗食物不会混在一起。
       final species = widget.petController.pet.value?.species ?? PetSpecies.cat;
       final foods = PetFoodCatalog.foodsForSpecies(species);
       final shopTitle = '${PetFoodCatalog.speciesLabel(species)}食物';
@@ -41,6 +47,7 @@ class _RewardShopPanelState extends State<PetRewardShopPanel> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 商城头部显示积分余额、当前物种标签和展开/收起按钮。
             InkWell(
               borderRadius: BorderRadius.circular(8),
               onTap: () => setState(() => _expanded = !_expanded),
@@ -89,6 +96,7 @@ class _RewardShopPanelState extends State<PetRewardShopPanel> {
               ),
             ),
             AnimatedCrossFade(
+              // 展开后展示食物项，购买按钮状态由积分余额响应式决定。
               firstChild: const SizedBox.shrink(),
               secondChild: Column(
                 children: [
@@ -113,6 +121,9 @@ class _RewardShopPanelState extends State<PetRewardShopPanel> {
   }
 }
 
+/// 商城里的单个食物商品。
+///
+/// 商品项展示价格、增益和已有库存；点击购买只调用 `RewardController.buyFood()`。
 class _FoodShopItem extends StatelessWidget {
   final PetFood food;
   final RewardController rewardController;
@@ -130,6 +141,7 @@ class _FoodShopItem extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // 食物图标目前使用通用图标，后续可替换为像素食物素材。
           Container(
             width: 42,
             height: 42,
@@ -144,6 +156,7 @@ class _FoodShopItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 商品信息来自 PetFoodCatalog，避免 UI 层散落食物数值。
                 Text(
                   food.name,
                   style: const TextStyle(
@@ -158,6 +171,7 @@ class _FoodShopItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Obx(
+                  // 库存数量随钱包刷新自动变化，购买成功后无需手动 setState。
                   () => Text(
                     '拥有 ${rewardController.foodCount(food.name)} 份',
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
@@ -168,6 +182,7 @@ class _FoodShopItem extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Obx(() {
+            // 积分不足时按钮仍展示价格，但点击会走失败提示，不直接消费。
             final canBuy = rewardController.points >= food.cost;
             return ElevatedButton(
               onPressed: () => _buyFood(canBuy),
@@ -187,6 +202,9 @@ class _FoodShopItem extends StatelessWidget {
     );
   }
 
+  /// 购买当前食物并持久化钱包。
+  ///
+  /// 这里不修改宠物饱腹/心情，只把食物放入库存；用户仍需手动喂食。
   Future<void> _buyFood(bool canBuy) async {
     if (!canBuy) {
       Get.snackbar('积分不足', '再完成一些专注或任务吧', snackPosition: SnackPosition.BOTTOM);

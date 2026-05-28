@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:todolist/model/pet/pet.dart';
 
+/// 宠物三项状态网格，展示心情、饱腹和精力。
+///
+/// 所有数值都来自当前 `PetModel`，这里只做只读可视化，
+/// 状态衰减、恢复和上下限由 `PetStateService` 负责。
 class PetStatusGrid extends StatelessWidget {
   final PetModel pet;
 
@@ -10,6 +14,7 @@ class PetStatusGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
+        // 心情会受到抚摸、任务完成、逾期和喂食影响。
         Expanded(
           child: _StatusCard(
             icon: Icons.favorite,
@@ -19,6 +24,7 @@ class PetStatusGrid extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
+        // 饱腹主要随时间下降，通过食物补充。
         Expanded(
           child: _StatusCard(
             icon: Icons.restaurant,
@@ -28,6 +34,7 @@ class PetStatusGrid extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
+        // 精力在清醒/专注时消耗，睡眠或休息番茄钟会恢复。
         Expanded(
           child: _StatusCard(
             icon: Icons.bedtime,
@@ -41,6 +48,7 @@ class PetStatusGrid extends StatelessWidget {
   }
 }
 
+/// 单个状态卡片，负责图标、标签、进度条和数值展示。
 class _StatusCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -68,6 +76,7 @@ class _StatusCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(label, style: const TextStyle(fontSize: 13)),
           const SizedBox(height: 8),
+          // 进度条约定输入值为 0-100，服务层已负责 clamp。
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(

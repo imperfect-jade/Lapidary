@@ -7,6 +7,10 @@ import 'package:todolist/page/pet/reward_controller.dart';
 
 import 'food_picker_sheet.dart';
 
+/// 宠物操作栏，提供抚摸、喂食入口和睡眠切换。
+///
+/// 交互都通过 `PetController` 的公开方法完成；底部库存行读取 `RewardController`
+/// 的钱包库存，只展示当前物种可食用且已拥有的食物。
 class PetActionBar extends StatelessWidget {
   final PetController controller;
   final PetModel pet;
@@ -23,6 +27,7 @@ class PetActionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // 三个主要动作按钮：抚摸直接生效，喂食打开 Sheet，睡眠按钮根据 pet.isSleeping 切换文案和图标。
         Row(
           children: [
             Expanded(
@@ -53,6 +58,7 @@ class PetActionBar extends StatelessWidget {
         const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerLeft,
+          // 库存行用于让用户在操作前知道当前物种有哪些可用食物，不负责扣库存。
           child: _FoodInventoryLine(
             rewardController: rewardController,
             pet: pet,
@@ -62,6 +68,7 @@ class PetActionBar extends StatelessWidget {
     );
   }
 
+  /// 打开喂食 Sheet 前先让宠物说一句提示文案，实际喂食由 Sheet 中的食物项触发。
   void _showFoodPicker() {
     controller.feed();
     Get.bottomSheet(
@@ -74,6 +81,9 @@ class PetActionBar extends StatelessWidget {
   }
 }
 
+/// 当前宠物物种对应的食物库存摘要。
+///
+/// 这里用 `Obx` 监听奖励钱包刷新，商城购买或喂食消耗后会自动更新数量。
 class _FoodInventoryLine extends StatelessWidget {
   final RewardController rewardController;
   final PetModel pet;
@@ -83,6 +93,7 @@ class _FoodInventoryLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      // 食物目录按物种过滤，避免猫狗食物在对方宠物下混用。
       final ownedFoods = PetFoodCatalog.foodsForSpecies(
         pet.species,
       ).where((food) => rewardController.foodCount(food.name) > 0).toList();

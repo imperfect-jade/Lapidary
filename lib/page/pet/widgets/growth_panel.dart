@@ -3,6 +3,10 @@ import 'package:todolist/constants/theme.dart';
 import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
 
+/// 宠物成长面板，展示昵称、等级和经验进度。
+///
+/// 面板读取 `PetModel` 的当前值，并通过 `PetController` 获取升级阈值与进度；
+/// 它只负责展示，不承担改名或经验计算。
 class PetGrowthPanel extends StatelessWidget {
   final PetController controller;
   final PetModel pet;
@@ -25,6 +29,7 @@ class PetGrowthPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 顶部显示宠物名称和等级，改名入口在首页宠物设置 Sheet 中。
           Row(
             children: [
               Expanded(
@@ -50,6 +55,7 @@ class PetGrowthPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          // 经验条由 controller.expProgress 驱动，升级公式集中在 PetStateService。
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(

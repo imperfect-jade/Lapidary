@@ -4,6 +4,10 @@ import 'package:todolist/features/pet/domain/pet_action.dart';
 import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
 
+/// 宠物页主舞台上的局部反馈层。
+///
+/// 它监听 `PetController.feedbackTick/feedbackAction` 播放爱心、食物、星星等短动画；
+/// 反馈只在宠物页内显示，全局跨页面提示由 `PetGlobalFeedbackOverlay` 负责。
 class PetFeedbackOverlay extends StatelessWidget {
   final PetController controller;
   final PetModel pet;
@@ -17,9 +21,11 @@ class PetFeedbackOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      // tick 用来区分连续同类反馈，确保相同 action 也能重新创建动画 Widget。
       final tick = controller.feedbackTick.value;
       final feedbackAction = controller.feedbackAction.value;
       if (feedbackAction == PetAction.taskComplete && tick > 0) {
+        // 任务/专注完成用星星表现正向奖励感。
         return Positioned(
           key: ValueKey('task_complete_feedback_$tick'),
           top: 42,
@@ -65,6 +71,7 @@ class PetFeedbackOverlay extends StatelessWidget {
       }
 
       if (feedbackAction == PetAction.overdue && tick > 0) {
+        // 逾期反馈保持克制，只显示提醒图标，不做惩罚式强打扰。
         return Positioned(
           key: ValueKey('overdue_feedback_$tick'),
           top: 50,
@@ -78,6 +85,7 @@ class PetFeedbackOverlay extends StatelessWidget {
       }
 
       if (pet.isSleeping) {
+        // 睡眠状态下持续显示 Z，优先级高于普通 idle 空状态。
         return const Positioned(
           top: 48,
           right: 76,
@@ -90,6 +98,7 @@ class PetFeedbackOverlay extends StatelessWidget {
       }
 
       if (feedbackAction == PetAction.pet && tick > 0) {
+        // 抚摸反馈使用多颗爱心，强化用户与宠物的直接互动。
         return Positioned(
           key: ValueKey('pet_feedback_$tick'),
           top: 48,
@@ -134,6 +143,7 @@ class PetFeedbackOverlay extends StatelessWidget {
       }
 
       if (feedbackAction == PetAction.feed && tick > 0) {
+        // 喂食反馈显示饭碗图标，数值变化已经由 PetController 持久化。
         return Positioned(
           key: ValueKey('feed_feedback_$tick'),
           bottom: 72,
@@ -150,6 +160,7 @@ class PetFeedbackOverlay extends StatelessWidget {
   }
 }
 
+/// 单个漂浮反馈图标，负责淡入淡出、上浮和缩放动画。
 class _FloatingFeedback extends StatefulWidget {
   final IconData icon;
   final Color color;
@@ -179,6 +190,7 @@ class _FloatingFeedbackState extends State<_FloatingFeedback>
   @override
   void initState() {
     super.initState();
+    // 每个图标自带动画控制器，支持通过 delay 做错落的星星/爱心效果。
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
@@ -208,6 +220,7 @@ class _FloatingFeedbackState extends State<_FloatingFeedback>
 
   @override
   void dispose() {
+    // 动画结束前页面离开时要释放控制器，避免 Ticker 泄漏。
     _controller.dispose();
     super.dispose();
   }
@@ -215,6 +228,7 @@ class _FloatingFeedbackState extends State<_FloatingFeedback>
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
+      // AnimatedBuilder 只重绘当前图标，不影响主舞台精灵帧动画。
       animation: _controller,
       builder: (context, child) {
         return Opacity(

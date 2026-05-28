@@ -11,6 +11,10 @@ import 'package:todolist/page/pet/pet_controller.dart';
 
 import '../sprite/sprite_sheet_painter.dart';
 
+/// 全局宠物反馈浮层，显示任务完成、专注完成和逾期等跨页面反馈。
+///
+/// 该组件通常放在首页 `Stack` 顶层，监听 `PetController.overlayEvent`；
+/// 它只消费事件并播放动画，不修改宠物数值或奖励钱包。
 class PetGlobalFeedbackOverlay extends StatefulWidget {
   const PetGlobalFeedbackOverlay({super.key});
 
@@ -21,10 +25,12 @@ class PetGlobalFeedbackOverlay extends StatefulWidget {
 
 class _PetGlobalFeedbackOverlayState extends State<PetGlobalFeedbackOverlay>
     with SingleTickerProviderStateMixin {
+  // 单条事件显示时长，过短会看不清文案，过长会遮挡当前工作流。
   static const Duration _visibleDuration = Duration(milliseconds: 1800);
 
   final PetController _controller = Get.find<PetController>();
   late final AnimationController _entranceController;
+  // Worker 订阅全局事件；Timer 控制自动隐藏，两者都需要在 dispose 释放。
   Worker? _eventWorker;
   Timer? _hideTimer;
   PetOverlayEvent? _event;
@@ -32,11 +38,13 @@ class _PetGlobalFeedbackOverlayState extends State<PetGlobalFeedbackOverlay>
   @override
   void initState() {
     super.initState();
+    // 入场/退场共用一个控制器，保证新事件到来时可以从头播放。
     _entranceController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 220),
     );
     _eventWorker = ever<PetOverlayEvent?>(
+      // 监听 Controller 发出的全局事件，保持页面层和业务联动解耦。
       _controller.overlayEvent,
       _handleOverlayEvent,
     );
@@ -44,12 +52,16 @@ class _PetGlobalFeedbackOverlayState extends State<PetGlobalFeedbackOverlay>
 
   @override
   void dispose() {
+    // 取消隐藏定时器和 GetX Worker，避免首页销毁后仍尝试 setState。
     _hideTimer?.cancel();
     _eventWorker?.dispose();
     _entranceController.dispose();
     super.dispose();
   }
 
+  /// 处理新的浮层事件：立即显示、播放入场动画，并在延迟后隐藏。
+  ///
+  /// 通过事件 id 判断当前隐藏回调是否仍对应同一条事件，避免连续事件互相覆盖。
   void _handleOverlayEvent(PetOverlayEvent? event) {
     if (!mounted || event == null) {
       return;
@@ -77,11 +89,13 @@ class _PetGlobalFeedbackOverlayState extends State<PetGlobalFeedbackOverlay>
     }
 
     return Positioned(
+      // 固定在右下角，既能被注意到，也尽量不遮挡当前页面的主内容。
       right: 16,
       bottom: 20,
       child: IgnorePointer(
         child: RepaintBoundary(
           child: FadeTransition(
+            // 透明度和缩放组合成轻量弹出效果，不拦截点击事件。
             opacity: CurvedAnimation(
               parent: _entranceController,
               curve: Curves.easeOut,
@@ -108,6 +122,7 @@ class _PetGlobalFeedbackOverlayState extends State<PetGlobalFeedbackOverlay>
   }
 }
 
+/// 单条全局反馈卡片，包含迷你宠物、事件图标、文案和心情变化。
 class _PetOverlayCard extends StatelessWidget {
   final PetOverlayEvent event;
   final PetController controller;
@@ -120,6 +135,7 @@ class _PetOverlayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 不同事件使用不同强调色：逾期偏冷静提醒，完成类偏正向奖励。
     final accent = _accentFor(event.action);
     final icon = _iconFor(event.action);
 
@@ -143,6 +159,7 @@ class _PetOverlayCard extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // 左侧迷你宠物复用精灵缓存，事件角标帮助用户快速识别反馈类型。
             SizedBox(
               width: 82,
               height: 92,
@@ -171,6 +188,7 @@ class _PetOverlayCard extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
+              // 右侧展示事件文案和心情变化，不提供按钮，避免打断当前页面流程。
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,15 +215,21 @@ class _PetOverlayCard extends StatelessWidget {
     );
   }
 
+  /// 根据动作类型选择浮层强调色。
   Color _accentFor(PetAction action) {
     return action == PetAction.overdue ? Colors.blueGrey : Colors.amber;
   }
 
+  /// 根据动作类型选择角标图标。
   IconData _iconFor(PetAction action) {
     return action == PetAction.overdue ? Icons.access_time : Icons.star_rounded;
   }
 }
 
+/// 全局浮层和番茄钟陪伴卡使用的迷你宠物精灵。
+///
+/// 它按当前宠物物种加载缓存精灵，并把 `PetAction` 映射到精灵动作；
+/// 资源加载失败时退回普通宠物图标，保证反馈浮层不会空白。
 class MiniPetSprite extends StatefulWidget {
   final PetController controller;
   final PetAction action;
@@ -223,6 +247,7 @@ class MiniPetSprite extends StatefulWidget {
 }
 
 class _MiniPetSpriteState extends State<MiniPetSprite> {
+  // 迷你精灵使用独立帧计时器，避免和主舞台精灵生命周期互相影响。
   Timer? _frameTimer;
   int _frameIndex = 0;
   CachedPetSprite? _sprite;
@@ -255,10 +280,12 @@ class _MiniPetSpriteState extends State<MiniPetSprite> {
 
   @override
   void dispose() {
+    // 取消帧动画计时器，防止浮层消失后继续 setState。
     _frameTimer?.cancel();
     super.dispose();
   }
 
+  /// 按当前宠物物种加载精灵缓存，失败时设置 fallback 状态。
   Future<void> _loadSprite() async {
     try {
       final species = widget.controller.pet.value?.species ?? PetSpecies.cat;
@@ -281,6 +308,7 @@ class _MiniPetSpriteState extends State<MiniPetSprite> {
     }
   }
 
+  /// 根据当前动作同步帧动画；动作未变化且计时器仍有效时不重复重启。
   void _syncAnimation() {
     final sprite = _sprite;
     if (sprite == null) {
@@ -303,6 +331,9 @@ class _MiniPetSpriteState extends State<MiniPetSprite> {
     });
   }
 
+  /// 将业务动作转换为精灵动作。
+  ///
+  /// 外部可通过 `spriteAction` 强制指定动作，番茄钟陪伴卡就使用这个入口播放随机动作。
   PetSpriteActionKey _actionKeyFor(PetAction action) {
     final spriteAction = widget.spriteAction;
     if (spriteAction != null) {
@@ -318,6 +349,7 @@ class _MiniPetSpriteState extends State<MiniPetSprite> {
   Widget build(BuildContext context) {
     final sprite = _sprite;
     if (_loadFailed || sprite == null) {
+      // 精灵资源缺失时显示稳定 fallback，避免全局浮层出现空区域。
       return const Icon(Icons.pets, color: Colors.black45, size: 54);
     }
 
@@ -336,6 +368,7 @@ class _MiniPetSpriteState extends State<MiniPetSprite> {
   }
 }
 
+/// 浮层宠物旁的事件角标，只负责视觉提示，不参与点击。
 class _OverlayIconBadge extends StatelessWidget {
   final IconData icon;
   final Color color;
@@ -357,6 +390,7 @@ class _OverlayIconBadge extends StatelessWidget {
   }
 }
 
+/// 心情变化标签，展示本次事件对宠物心情的影响。
 class _MoodDeltaPill extends StatelessWidget {
   final int delta;
   final Color color;

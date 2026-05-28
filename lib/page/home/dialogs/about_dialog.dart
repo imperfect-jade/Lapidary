@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+/// 显示应用介绍弹窗。
+///
+/// 内容为静态品牌说明，不依赖任何 Controller。
 void showHomeAboutDialog() {
   Get.dialog(
+    // 关于弹窗 UI：展示应用名称、作者和产品定位，不依赖运行时状态。
     AlertDialog(
       title: const Text('关于琢玉'),
       content: const Column(

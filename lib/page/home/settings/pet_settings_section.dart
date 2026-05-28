@@ -6,6 +6,9 @@ import 'package:todolist/page/pet/pet_controller.dart';
 
 import 'pet_name_dialog.dart';
 
+/// 首页侧边栏中的宠物快捷设置区。
+///
+/// 只暴露改名和猫狗切换这类轻量操作，避免在首页设置中承载完整养成逻辑。
 class HomePetSettingsSection extends StatelessWidget {
   const HomePetSettingsSection({super.key});
 
@@ -15,16 +18,19 @@ class HomePetSettingsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 区块标题：提示用户当前区域用于管理首页侧边栏里的宠物快捷项。
         const Text(
           '宠物设置',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 10),
         Obx(() {
+          // 宠物数据可能在初始化早期为空，空值时使用默认猫作为展示兜底。
           final pet = petController.pet.value;
           final species = pet?.species ?? PetSpecies.cat;
           return Column(
             children: [
+              // 宠物名称行：展示当前名称，点击修改时打开改名弹窗。
               _PetNameEditor(
                 name: pet?.name ?? '小云',
                 onEdit: () => showPetNameDialog(petController, pet?.name),
@@ -32,6 +38,7 @@ class HomePetSettingsSection extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
+                  // 猫/狗物种卡片：显示当前选择状态，点击后委托 PetController 保存物种。
                   Expanded(
                     child: _PetOptionCard(
                       title: '像素小猫',

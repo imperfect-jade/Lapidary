@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+/// 显示版本信息弹窗。
+///
+/// 版本号来自平台包信息，避免在 UI 中手写版本导致和 pubspec 不一致。
 void showHomeVersionDialog() {
   Get.dialog(
+    // 版本弹窗 UI：展示应用名、版本号和仓库地址。
+    // 版本号异步读取，避免阻塞弹窗打开。
     AlertDialog(
       title: const Text('版本信息'),
       content: FutureBuilder<PackageInfo>(
+        // PackageInfo 读取依赖平台通道，因此用 FutureBuilder 展示异步结果。
         future: PackageInfo.fromPlatform(),
         builder: (context, snapshot) {
           final version = _formatPackageVersion(snapshot.data);
@@ -35,6 +41,7 @@ void showHomeVersionDialog() {
   );
 }
 
+/// 将平台读取到的版本号和构建号合并为统一展示文本。
 String _formatPackageVersion(PackageInfo? info) {
   if (info == null) {
     return '加载中...';

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
 
+/// 弹出宠物改名对话框。
+///
+/// 输入校验放在这里，实际改名和保存仍委托给 [PetController]。
 void showPetNameDialog(PetController petController, String? currentName) {
   final nameController = TextEditingController(text: currentName ?? '');
   Get.dialog(
@@ -53,5 +56,6 @@ void showPetNameDialog(PetController petController, String? currentName) {
         ),
       ],
     ),
+    // 对话框关闭后释放输入控制器，避免多次打开设置时残留文本控制器。
   ).whenComplete(nameController.dispose);
 }

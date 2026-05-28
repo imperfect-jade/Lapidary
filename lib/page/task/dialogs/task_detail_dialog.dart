@@ -4,9 +4,13 @@ import 'package:todolist/constants/task_priority.dart';
 import 'package:todolist/model/task/task.dart';
 import 'package:todolist/page/task/utils/formatters.dart';
 
+/// 显示任务详情弹窗。
+///
+/// 详情弹窗只做只读展示，不直接修改任务状态，避免和列表卡片的完成/删除入口混在一起。
 void showTaskDetailDialog(TaskModel task) {
   final priority = taskPriorityOf(task.priority);
   Get.dialog(
+    // 详情弹窗 UI：标题展示完成态，内容区展示任务元信息和描述。
     AlertDialog(
       title: Text(
         task.title,
@@ -31,6 +35,7 @@ void showTaskDetailDialog(TaskModel task) {
             _detailRow('创建时间', formatTaskDateTime(task.createdAt)),
             _detailRow('优先级', priority.label, valueColor: priority.color),
             if (task.hasFocusTarget)
+              // 长期任务才会展示专注目标，日任务没有该信息。
               _detailRow('专注目标', formatTaskFocusTarget(task)),
             const SizedBox(height: 12),
             if (task.description != null && task.description!.isNotEmpty) ...[
@@ -50,6 +55,7 @@ void showTaskDetailDialog(TaskModel task) {
   );
 }
 
+/// 详情弹窗中的通用字段行。
 Widget _detailRow(String label, String value, {Color? valueColor}) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 10),

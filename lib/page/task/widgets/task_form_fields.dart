@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import 'package:todolist/constants/task_priority.dart';
 import 'package:todolist/model/task/task.dart';
 
+/// 任务优先级选择器。
+///
+/// 只维护弹窗内的临时选择值，提交时由新增任务弹窗统一读取。
 class TaskPrioritySelector extends StatelessWidget {
   final RxInt selectedPriority;
 
@@ -13,6 +16,7 @@ class TaskPrioritySelector extends StatelessWidget {
     return Obx(() {
       final option = taskPriorityOf(selectedPriority.value);
       return InputDecorator(
+        // 优先级表单块：下拉列表展示颜色和文案，选中值写回 selectedPriority。
         decoration: const InputDecoration(
           labelText: '优先级',
           border: OutlineInputBorder(),
@@ -69,6 +73,7 @@ class TaskPrioritySelector extends StatelessWidget {
   }
 }
 
+/// 任务类型选择器，用于区分日任务、周任务和月任务。
 class TaskTypeSelector extends StatelessWidget {
   final RxString selectedType;
 
@@ -78,6 +83,7 @@ class TaskTypeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(
       () => InputDecorator(
+        // 任务类型表单块：ChoiceChip 切换日/周/月任务，影响是否展示专注目标。
         decoration: const InputDecoration(
           labelText: '任务类型',
           border: OutlineInputBorder(),
@@ -98,6 +104,7 @@ class TaskTypeSelector extends StatelessWidget {
   }
 }
 
+/// 截止时间选择器，分别选择日期和时间后合并成一个 DateTime。
 class TaskDeadlineSelector extends StatelessWidget {
   final Rx<DateTime> selectedDeadline;
 
@@ -108,6 +115,7 @@ class TaskDeadlineSelector extends StatelessWidget {
     return Obx(() {
       final deadline = selectedDeadline.value;
       return InputDecorator(
+        // 截止时间表单块：日期按钮和时间按钮共同维护同一个 selectedDeadline。
         decoration: const InputDecoration(
           labelText: '截止时间',
           border: OutlineInputBorder(),
@@ -128,6 +136,7 @@ class TaskDeadlineSelector extends StatelessWidget {
                 if (date == null) {
                   return;
                 }
+                // 保留原有时分，只替换日期部分。
                 selectedDeadline.value = DateTime(
                   date.year,
                   date.month,
@@ -148,6 +157,7 @@ class TaskDeadlineSelector extends StatelessWidget {
                 if (time == null) {
                   return;
                 }
+                // 保留原有年月日，只替换时分部分。
                 selectedDeadline.value = DateTime(
                   deadline.year,
                   deadline.month,
@@ -168,6 +178,9 @@ class TaskDeadlineSelector extends StatelessWidget {
   }
 }
 
+/// 长期任务专注目标选择器。
+///
+/// 日任务不展示该控件；周/月任务可设置周期和目标分钟数，供番茄钟进度展示使用。
 class TaskFocusTargetSelector extends StatelessWidget {
   final RxString selectedPeriod;
   final TextEditingController minutesController;
@@ -181,6 +194,7 @@ class TaskFocusTargetSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InputDecorator(
+      // 专注目标表单块：左侧选择周期，右侧输入目标分钟数。
       decoration: const InputDecoration(
         labelText: '专注目标',
         border: OutlineInputBorder(),

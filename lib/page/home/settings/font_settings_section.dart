@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:todolist/constants/theme.dart';
 
+/// 字体设置区，展示字体预览并响应当前正文字体变化。
 class HomeFontSettingsSection extends StatelessWidget {
   const HomeFontSettingsSection({super.key});
 
@@ -11,6 +12,7 @@ class HomeFontSettingsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 区块标题：提示用户当前区域用于切换应用正文字体。
         const Text(
           '字体设置',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -18,6 +20,7 @@ class HomeFontSettingsSection extends StatelessWidget {
         const SizedBox(height: 10),
         LayoutBuilder(
           builder: (context, constraints) {
+            // 与主题卡片保持相同的响应式列数，保证设置 Sheet 视觉一致。
             const spacing = 10.0;
             final maxWidth = constraints.maxWidth.isFinite
                 ? constraints.maxWidth
@@ -26,12 +29,14 @@ class HomeFontSettingsSection extends StatelessWidget {
             final cardWidth = (maxWidth - spacing * (columns - 1)) / columns;
 
             return Obx(
+              // 字体切换会影响全局主题，这里只负责展示当前选中态。
               () => Wrap(
                 spacing: spacing,
                 runSpacing: spacing,
                 children: ThemeController.fontOptions.map((option) {
                   final selected =
                       themeController.currentFontKey.value == option.key;
+                  // 单个字体卡片：展示字体预览、说明和当前选中态，点击后持久化字体 key。
                   return InkWell(
                     borderRadius: BorderRadius.circular(8),
                     onTap: () => themeController.changeBodyFont(option.key),

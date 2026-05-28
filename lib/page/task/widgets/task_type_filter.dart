@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:todolist/constants/theme.dart';
 import 'package:todolist/model/task/task.dart';
 
+/// 任务类型筛选条。
+///
+/// 筛选状态由 TaskPage 持有，组件本身只负责展示选项和回传选择结果。
 class TaskTypeFilter extends StatelessWidget {
   final String? selectedType;
   final ValueChanged<String?> onSelected;
@@ -14,6 +17,7 @@ class TaskTypeFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 筛选项映射：null 表示“全部”，其余 key 对应 TaskType 中的任务类型。
     final filters = <String?, String>{
       null: '全部',
       TaskType.day: '日任务',
@@ -22,6 +26,7 @@ class TaskTypeFilter extends StatelessWidget {
     };
 
     return Container(
+      // 筛选条 UI：使用紧凑 ChoiceChip，放在任务列表上方快速切换显示范围。
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 2),
       child: Wrap(

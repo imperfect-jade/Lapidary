@@ -6,6 +6,9 @@ import 'package:todolist/page/task/task_controller.dart';
 import 'package:todolist/page/task/utils/formatters.dart';
 import 'package:todolist/page/task/widgets/task_chips.dart';
 
+/// 任务列表中的单个任务卡片。
+///
+/// 卡片负责展示、完成状态切换和删除确认；持久化操作统一委托给 [TaskController]。
 class TaskCard extends StatelessWidget {
   final TaskModel task;
   final TaskController controller;
@@ -22,12 +25,14 @@ class TaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final priority = taskPriorityOf(task.priority);
     return Card(
+      // 卡片主体：左侧完成勾选，中间摘要信息，右侧删除入口。
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         onTap: onTap,
         leading: Checkbox(
+          // 完成状态切换：只调用 Controller，由 Controller 决定是否触发奖励和刷新。
           value: task.isCompleted,
           onChanged: (value) {
             controller.updateTaskStatus(task);
@@ -35,6 +40,7 @@ class TaskCard extends StatelessWidget {
         ),
         title: Row(
           children: [
+            // 标题区：完成后使用删除线和灰色弱化展示。
             Expanded(
               child: Text(
                 task.title,
@@ -50,6 +56,7 @@ class TaskCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
+            // 任务类型徽标：帮助用户快速识别日/周/月任务。
             TaskBadge(label: TaskType.labelOf(task.taskType)),
           ],
         ),
@@ -69,6 +76,7 @@ class TaskCard extends StatelessWidget {
                   ),
                 ),
               Wrap(
+                // 摘要信息区：展示截止时间、优先级和可选专注目标。
                 spacing: 8,
                 runSpacing: 4,
                 children: [
@@ -94,6 +102,7 @@ class TaskCard extends StatelessWidget {
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline, color: Colors.red),
           onPressed: () {
+            // 删除前二次确认，确认后只调用 Controller，不在组件内直接处理 Hive。
             Get.dialog(
               AlertDialog(
                 title: const Text('删除任务'),

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:todolist/constants/theme.dart';
 
+/// 使用指南页面。
+///
+/// 该页面只展示静态说明，帮助用户理解任务、番茄钟、日历和宠物之间的协作方式。
 class UserGuidePage extends StatelessWidget {
   const UserGuidePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // 使用数据列表驱动说明区块，后续增删指南内容时无需复制整段 UI。
     final sections = [
       const _GuideSectionData(
         icon: Icons.rocket_launch_outlined,
@@ -68,6 +72,7 @@ class UserGuidePage extends StatelessWidget {
     ];
 
     return Scaffold(
+      // 使用指南页面骨架：AppBar 保持和主应用一致的主题色。
       backgroundColor: TaskTheme.primaryColor,
       appBar: AppBar(
         title: const Text('使用指南'),
@@ -80,14 +85,17 @@ class UserGuidePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // 顶部引导卡片：说明应用整体价值和工作方式。
             const _GuideIntro(),
             const SizedBox(height: 12),
+            // 功能说明区块：由 sections 数据列表生成，避免重复手写相同布局。
             ...sections.map(
               (section) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _GuideSection(section: section),
               ),
             ),
+            // 宠物数值机制说明：帮助用户理解经验、心情、饱腹和精力变化。
             const _PetMechanismSection(),
           ],
         ),
@@ -134,6 +142,7 @@ class _GuideSectionData {
   });
 }
 
+/// 通用指南区块渲染组件。
 class _GuideSection extends StatelessWidget {
   final _GuideSectionData section;
 
@@ -156,6 +165,7 @@ class _GuideSection extends StatelessWidget {
   }
 }
 
+/// 宠物数值说明集中放在单独区块，便于后续调整宠物规则时同步维护。
 class _PetMechanismSection extends StatelessWidget {
   const _PetMechanismSection();
 

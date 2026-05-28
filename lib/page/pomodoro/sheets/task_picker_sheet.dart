@@ -4,11 +4,15 @@ import 'package:todolist/page/task/task_controller.dart';
 
 import '../pomodoro_controller.dart';
 
+/// 显示番茄钟任务选择底部 Sheet。
+///
+/// 用户可以选择一个未完成待办开始专注，也可以选择自由专注不关联任务。
 void showPomodoroTaskPicker(
   PomodoroController controller,
   TaskController taskController,
 ) {
   Get.bottomSheet(
+    // 任务选择 Sheet UI：展示待完成任务列表，底部提供自由专注入口。
     Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
@@ -26,6 +30,7 @@ void showPomodoroTaskPicker(
           const SizedBox(height: 16),
           ...taskController.pendingTasks.map(
             (task) => ListTile(
+              // 关联任务入口：记录任务 id/title，并立即启动一轮专注。
               title: Text(task.title),
               onTap: () {
                 controller.currentTaskId.value = task.id;
@@ -36,6 +41,7 @@ void showPomodoroTaskPicker(
             ),
           ),
           ListTile(
+            // 自由专注入口：不设置任务 id/title，仍会创建番茄钟记录。
             title: const Text('自由专注（不关联任务）'),
             onTap: () {
               controller.startFocus();

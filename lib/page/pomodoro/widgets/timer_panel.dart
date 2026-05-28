@@ -5,6 +5,9 @@ import '../dialogs/settings_dialog.dart';
 import '../pomodoro_controller.dart';
 import 'hints.dart';
 
+/// 计时器圆形面板外壳。
+///
+/// 根据当前是否为专注模式切换强调色，内部 child 负责显示具体时间文字。
 class _TimerPanel extends StatelessWidget {
   final Widget child;
   final bool isFocus;
@@ -17,6 +20,7 @@ class _TimerPanel extends StatelessWidget {
         ? const Color.fromARGB(255, 239, 116, 116)
         : const Color.fromARGB(255, 89, 174, 118);
     return Container(
+      // 圆形视觉容器：用于空闲态开始圆盘和运行态进度圆盘的共同底座。
       width: 242,
       height: 242,
       decoration: BoxDecoration(
@@ -36,6 +40,9 @@ class _TimerPanel extends StatelessWidget {
   }
 }
 
+/// 运行态当前任务信息条。
+///
+/// 由 controller.currentTaskTitle 驱动，有关联任务时显示标题，否则显示自由专注。
 class PomodoroRunningTaskInfo extends StatelessWidget {
   final PomodoroController controller;
 
@@ -46,6 +53,7 @@ class PomodoroRunningTaskInfo extends StatelessWidget {
     return Obx(() {
       final taskTitle = controller.currentTaskTitle.value;
       return Container(
+        // 任务信息条 UI：放在计时器下方，限制一行避免长标题撑开布局。
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.82),
@@ -66,6 +74,9 @@ class PomodoroRunningTaskInfo extends StatelessWidget {
   }
 }
 
+/// 空闲态计时器中心文字。
+///
+/// 显示下一轮专注的预设时长，并提示用户点击计时器可调整设置。
 class _IdleTimerLabel extends StatelessWidget {
   final PomodoroController controller;
 
@@ -101,6 +112,9 @@ class _IdleTimerLabel extends StatelessWidget {
   }
 }
 
+/// 运行态计时器中心文字。
+///
+/// 显示实时剩余时间和当前模式，颜色随专注/休息切换。
 class _RunningTimerLabel extends StatelessWidget {
   final PomodoroController controller;
 
@@ -139,6 +153,9 @@ class _RunningTimerLabel extends StatelessWidget {
   }
 }
 
+/// 运行态环形进度条。
+///
+/// 进度由 [PomodoroController.progress] 提供，中心 child 通常是圆形计时器面板。
 class _TimerProgressRing extends StatelessWidget {
   final PomodoroController controller;
   final Widget child;
@@ -151,6 +168,7 @@ class _TimerProgressRing extends StatelessWidget {
       final isFocus = controller.currentMode.value == 'focus';
       final color = isFocus ? Colors.red : Colors.green;
       return SizedBox(
+        // 外层环形进度：显示当前轮次已经经过的比例。
         width: 258,
         height: 258,
         child: Stack(
@@ -174,6 +192,9 @@ class _TimerProgressRing extends StatelessWidget {
   }
 }
 
+/// 计时器设置点击热区。
+///
+/// 包裹空闲态和运行态计时器，让用户点击圆盘即可打开时长设置。
 class _SettingsTapTarget extends StatelessWidget {
   final PomodoroController controller;
   final Widget child;
@@ -190,6 +211,9 @@ class _SettingsTapTarget extends StatelessWidget {
   }
 }
 
+/// 空闲态开始圆盘。
+///
+/// 展示当前专注时长设置，点击圆盘打开设置弹窗；真正开始计时由任务选择入口触发。
 class PomodoroStartCircle extends StatelessWidget {
   final PomodoroController controller;
 
@@ -210,6 +234,9 @@ class PomodoroStartCircle extends StatelessWidget {
   }
 }
 
+/// 运行态倒计时进度圆盘。
+///
+/// 展示剩余时间和进度，点击圆盘仍可打开设置弹窗调整后续轮次时长。
 class PomodoroTimerProgress extends StatelessWidget {
   final PomodoroController controller;
 

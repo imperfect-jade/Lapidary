@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 
 import '../pomodoro_controller.dart';
 
+/// 今日番茄钟统计区。
+///
+/// 展示今日已完成专注分钟数和完成番茄数量，数据由 [PomodoroController] 从历史记录初始化并实时更新。
 class PomodoroTodayStats extends StatelessWidget {
   final PomodoroController controller;
 
@@ -12,6 +15,7 @@ class PomodoroTodayStats extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       return Row(
+        // 两张统计卡片横向排列，分别展示专注时长和完成次数。
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _statCard('今日专注', '${controller.todayFocusMinutes.value}分钟'),
@@ -21,6 +25,9 @@ class PomodoroTodayStats extends StatelessWidget {
     });
   }
 
+  /// 构建单个统计卡片。
+  ///
+  /// label 是指标名称，value 是已经格式化好的展示值。
   Widget _statCard(String label, String value) {
     return Expanded(
       child: Container(

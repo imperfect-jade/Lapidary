@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 
 import '../pomodoro_controller.dart';
 
+/// 运行态计时控制按钮组。
+///
+/// 根据暂停状态切换暂停/继续按钮，并提供放弃当前计时入口。
 class PomodoroTimerControls extends StatelessWidget {
   final PomodoroController controller;
 
@@ -12,6 +15,7 @@ class PomodoroTimerControls extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       return Row(
+        // 控制区 UI：左侧是暂停/继续，右侧是放弃；所有动作委托给 PomodoroController。
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (!controller.isPaused.value)

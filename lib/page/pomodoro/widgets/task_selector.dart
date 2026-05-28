@@ -5,6 +5,9 @@ import 'package:todolist/page/task/task_controller.dart';
 import '../pomodoro_controller.dart';
 import '../sheets/task_picker_sheet.dart';
 
+/// 空闲态任务选择组件。
+///
+/// 未选择任务时显示选择按钮；选择任务后显示任务名、开始专注按钮和清除入口。
 class PomodoroTaskSelector extends StatelessWidget {
   final PomodoroController controller;
   final TaskController taskController;
@@ -21,6 +24,7 @@ class PomodoroTaskSelector extends StatelessWidget {
       final taskTitle = controller.currentTaskTitle.value;
       if (taskTitle != null) {
         return Container(
+          // 已选择任务区：展示当前任务，并允许直接开始或取消关联。
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -55,6 +59,7 @@ class PomodoroTaskSelector extends StatelessWidget {
       }
 
       return OutlinedButton.icon(
+        // 未选择任务区：打开任务选择 Sheet，也可以在 Sheet 内选择自由专注。
         onPressed: () => showPomodoroTaskPicker(controller, taskController),
         icon: const Icon(Icons.add_task),
         label: const Text('选择要专注的任务（可选）'),

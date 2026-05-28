@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+/// 运行态励志语轮播组件。
+///
+/// 从文本资源加载多条文案，运行时按固定间隔轮播，为专注过程提供轻量陪伴感。
 class PomodoroMotivationQuoteTicker extends StatefulWidget {
   const PomodoroMotivationQuoteTicker({super.key});
 
@@ -21,9 +24,13 @@ class _MotivationQuoteTickerState extends State<PomodoroMotivationQuoteTicker> {
   @override
   void initState() {
     super.initState();
+    // 初始化时异步读取资源文件，避免阻塞页面构建。
     _loadQuotes();
   }
 
+  /// 加载励志语资源并启动轮播计时器。
+  ///
+  /// 文本文件以空行分隔不同文案；只有多于一条文案时才启动定时轮换。
   Future<void> _loadQuotes() async {
     final raw = await rootBundle.loadString(_assetPath);
     final quotes = raw
@@ -36,6 +43,7 @@ class _MotivationQuoteTickerState extends State<PomodoroMotivationQuoteTicker> {
     }
     setState(() => _quotes = quotes);
     if (quotes.length > 1) {
+      // 每 6 秒切换一条文案；回调前检查 mounted，避免组件销毁后 setState。
       _timer = Timer.periodic(const Duration(seconds: 6), (_) {
         if (!mounted) {
           return;
@@ -47,6 +55,7 @@ class _MotivationQuoteTickerState extends State<PomodoroMotivationQuoteTicker> {
 
   @override
   void dispose() {
+    // 组件销毁时取消轮播计时器，避免后台继续回调。
     _timer?.cancel();
     super.dispose();
   }
@@ -57,6 +66,7 @@ class _MotivationQuoteTickerState extends State<PomodoroMotivationQuoteTicker> {
         ? '预测未来的最好方法就是去创造未来。'
         : _quotes[_currentIndex];
     return Container(
+      // 励志语卡片 UI：左侧强调线 + 中间文字，使用 AnimatedSwitcher 做轻量切换动画。
       width: double.infinity,
       height: 72,
       padding: const EdgeInsets.fromLTRB(14, 10, 16, 10),

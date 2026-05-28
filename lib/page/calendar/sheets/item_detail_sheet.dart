@@ -5,12 +5,16 @@ import 'package:todolist/page/calendar/calendar_controller.dart';
 import 'package:todolist/page/calendar/utils/formatters.dart';
 import 'package:todolist/page/task/task_controller.dart';
 
-// 事项详情
+/// 月历事项详情 Sheet。
+///
+/// APP 任务会提供同步到手机日历和删除任务入口；手机日历事件只展示来源和时间。
+/// 这里不直接改写任务字段，删除和同步都委托对应 Controller。
 void showCalendarItemDetail(
   CalendarModel item,
   CalendarController calenderController,
   TaskController taskController,
 ) {
+  // APP 事项需要回查本地任务，防止任务被删除后详情仍显示可操作入口。
   final linkedTask = item.source == 'app'
       ? taskController.findTaskById(item.taskId)
       : null;
@@ -34,7 +38,7 @@ void showCalendarItemDetail(
             Text(item.description!, style: const TextStyle(color: Colors.grey)),
           ],
           const SizedBox(height: 12),
-          // 如果是APP任务，提供同步到手机日历的选项
+          // APP 任务区：提供同步到手机日历和删除本地任务两个操作。
           if (item.source == 'app') ...[
             const Divider(),
             if (linkedTask == null)
@@ -49,7 +53,7 @@ void showCalendarItemDetail(
                 title: const Text('同步到手机日历'),
                 subtitle: const Text('将该任务添加到手机系统日历'),
                 onTap: () async {
-                  //同步任务到手机日历
+                  // 同步任务到手机日历，只写设备日历，不修改本地任务模型。
                   final success = await calenderController.syncTaskToCalendar(
                     linkedTask,
                   );
@@ -64,13 +68,14 @@ void showCalendarItemDetail(
                 leading: const Icon(Icons.delete, color: Colors.red),
                 title: const Text('删除任务'),
                 onTap: () {
+                  // 删除仍走 TaskController，保持任务列表、四象限和月历缓存同步。
                   taskController.deleteTask(linkedTask);
                   Get.back();
                 },
               ),
             ],
           ],
-          // 如果是手机日历事件
+          // 手机日历事件区：只读展示，不提供编辑设备日历事件入口。
           if (item.source == 'device') ...[
             const Divider(),
             const Text(

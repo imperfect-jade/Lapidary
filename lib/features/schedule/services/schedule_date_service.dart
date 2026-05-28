@@ -1,5 +1,8 @@
 import 'package:todolist/model/schedule/schedule.dart';
 
+/// 某个日期在学期课表中的上下文。
+///
+/// 包含所属半学期、单双周索引和周次，供月历课程过滤和周次标题展示使用。
 class ScheduleDayContext {
   final ScheduleSemesterModel semester;
   final int halfIndex;
@@ -13,18 +16,27 @@ class ScheduleDayContext {
     required this.weekNumber,
   });
 
+  /// 当前日期是否属于上半学期。
   bool get isFirstHalf => halfIndex == 0;
 
+  /// 半学期展示名，模型未配置时回退为“上半/下半”。
   String get halfName {
     final name = isFirstHalf ? semester.firstHalfName : semester.secondHalfName;
     return name.isEmpty ? (isFirstHalf ? '上半' : '下半') : name;
   }
 
+  /// 月历当天列表顶部展示的周次标签。
   String get weekLabel =>
       '$halfName${ScheduleDateService.chineseNumber(weekNumber)}周';
 }
 
+/// 课表日期服务，负责半学期日期表、日期定位和某日课程过滤。
+///
+/// 这是纯逻辑服务，不访问 GetX、Hive 或 UI；输入学期模型和日期，输出可测试的数据结果。
 class ScheduleDateService {
+  /// 根据上下半学期起止日期生成 `dayOfWeekToDays` 映射表。
+  ///
+  /// 结果结构沿用现有 Hive 模型字段，不改变 schema。
   static List<List<List<List<DateTime>>>> buildDayOfWeekToDays({
     required DateTime firstHalfStart,
     required DateTime firstHalfEnd,
@@ -37,6 +49,9 @@ class ScheduleDateService {
     return result;
   }
 
+  /// 将一个半学期的日期填入目标结构。
+  ///
+  /// weekday 使用 Dart 的 1-7，oddEvenWeek 在每周结束后切换，用于推导单双周。
   static void fillHalfDays(
     DateTime start,
     DateTime end,
@@ -58,6 +73,9 @@ class ScheduleDateService {
     }
   }
 
+  /// 定位某个日期在学期中的上下文。
+  ///
+  /// 日期不在任一半学期范围内时返回 null，调用方据此隐藏课程或周次标签。
   static ScheduleDayContext? dayContextForDate(
     ScheduleSemesterModel semester,
     DateTime date,
@@ -93,6 +111,9 @@ class ScheduleDateService {
     return null;
   }
 
+  /// 获取某一天应展示的课程。
+  ///
+  /// 过滤条件包括：确认状态、是否显示在课表、星期、半学期、单双周和自定义周次。
   static List<ScheduleSessionModel> sessionsForDate(
     ScheduleSemesterModel semester,
     DateTime date,
@@ -102,6 +123,7 @@ class ScheduleDateService {
       return <ScheduleSessionModel>[];
     }
     final sessions = semester.sessions.where((session) {
+      // 未确认、隐藏、星期不匹配或没有节次的课程不进入当天列表。
       if (!session.confirmed ||
           !session.showOnTimetable ||
           session.dayOfWeek != date.weekday ||
@@ -115,6 +137,7 @@ class ScheduleDateService {
         return false;
       }
       if (session.customRepeat) {
+        // 自定义周次优先于单双周规则。
         return session.customRepeatWeeks.contains(context.weekNumber);
       }
       return context.oddEvenIndex == 0 ? session.oddWeek : session.evenWeek;
@@ -123,14 +146,19 @@ class ScheduleDateService {
     return sessions;
   }
 
+  /// 归一化日期到当天零点，避免时分秒影响同日判断。
   static DateTime dayKey(DateTime date) {
     return DateTime(date.year, date.month, date.day);
   }
 
+  /// 判断两个日期是否为同一天。
   static bool isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
+  /// 将周次数字转换为中文数字展示。
+  ///
+  /// 超出常见两位数范围时退回原数字字符串，避免复杂转换引入风险。
   static String chineseNumber(int value) {
     const digits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
     if (value <= 0) {

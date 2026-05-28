@@ -10,11 +10,16 @@ import 'package:todolist/page/calendar/dialogs/schedule_session_dialog.dart';
 import 'package:todolist/page/calendar/sheets/schedule_session_sheet.dart';
 import 'package:todolist/page/schedule/schedule_controller.dart';
 
+/// 课表主视图，展示工具栏和按星期/节次排列的课程网格。
+///
+/// 视图读取 `ScheduleController` 的当前学期、半学期和隐藏信息状态；
+/// 冲突合并、时间格式化和颜色计算分别委托给 feature 层服务。
 Widget buildScheduleView(
   BuildContext context,
   ScheduleController scheduleController,
 ) {
   return Obx(() {
+    // 没有任何学期时显示创建学期入口，避免空网格误导用户。
     if (scheduleController.semesters.isEmpty) {
       return _buildScheduleEmptyState(context, scheduleController);
     }
@@ -22,18 +27,21 @@ Widget buildScheduleView(
     if (semester == null) {
       return _buildScheduleEmptyState(context, scheduleController);
     }
+    // 课程颜色跟随当前主题；ThemeController 不存在时退回默认主题。
     final palette = Get.isRegistered<ThemeController>()
         ? Get.find<ThemeController>().currentPalette
         : TaskTheme.palette;
     final hideInformation = scheduleController.hideCourseInformation.value;
     return Column(
       children: [
+        // 顶部工具栏负责学期、半学期、课程数量和显示/隐藏信息切换。
         _buildScheduleToolbar(
           context,
           scheduleController,
           semester,
           hideInformation,
         ),
+        // 下方网格按星期列和 13 节课行绘制课程卡片。
         _buildScheduleGrid(
           context,
           scheduleController,
@@ -46,6 +54,7 @@ Widget buildScheduleView(
   });
 }
 
+/// 课表空状态，提示用户先创建学期。
 Widget _buildScheduleEmptyState(
   BuildContext context,
   ScheduleController scheduleController,
@@ -69,6 +78,9 @@ Widget _buildScheduleEmptyState(
   );
 }
 
+/// 课表模式下的浮动按钮。
+///
+/// 已有学期时用于添加课程，没有学期时用于创建学期；月历模式下隐藏。
 Widget buildScheduleFloatingActionButton(
   BuildContext context,
   ScheduleController controller,
@@ -86,6 +98,7 @@ Widget buildScheduleFloatingActionButton(
       backgroundColor: TaskTheme.selectedColor,
       foregroundColor: Colors.white,
       onPressed: () {
+        // 根据是否已有选中学期决定进入课程表单还是学期创建表单。
         if (hasSemester) {
           showScheduleSessionDialog(context, controller);
         } else {
@@ -97,6 +110,9 @@ Widget buildScheduleFloatingActionButton(
   });
 }
 
+/// 课表顶部工具栏。
+///
+/// 工具栏集中承载学期选择、半学期切换、课程数量、隐藏课程信息和更多操作。
 Widget _buildScheduleToolbar(
   BuildContext context,
   ScheduleController controller,
@@ -104,6 +120,7 @@ Widget _buildScheduleToolbar(
   bool hideInformation,
 ) {
   final selectedId = controller.selectedSemesterId.value;
+  // 课程数量按当前半学期课表中的可展示课程统计，不直接读取所有 sessions。
   final sessionCount = controller.sessionsByDayOfWeek.fold<int>(
     0,
     (total, day) => total + day.length,
@@ -121,12 +138,14 @@ Widget _buildScheduleToolbar(
     ),
     child: LayoutBuilder(
       builder: (context, constraints) {
+        // 窄屏下压缩间距，保证工具栏按钮仍在一行内可用。
         final compact = constraints.maxWidth < 390;
         final halfSwitch = _buildHalfSwitch(controller, semester);
         final infoActions = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Tooltip(
+              // 隐藏信息只影响课程卡片文字，不改变课程模型。
               message: hideInformation ? '显示课程信息' : '隐藏课程信息',
               child: IconButton.filledTonal(
                 constraints: const BoxConstraints.tightFor(
@@ -146,6 +165,7 @@ Widget _buildScheduleToolbar(
               width: 36,
               height: 36,
               child: PopupMenuButton<_ScheduleToolbarAction>(
+                // 更多菜单提供添加课程/创建学期入口，避免工具栏塞太多文字按钮。
                 tooltip: '课表操作',
                 padding: EdgeInsets.zero,
                 icon: const Icon(Icons.more_vert, size: 20),
@@ -200,6 +220,7 @@ Widget _buildScheduleToolbar(
   );
 }
 
+/// 学期选择器，展示当前学期名称并通过弹出菜单切换。
 Widget _buildSemesterSelector(
   ScheduleController controller,
   String? selectedId,
@@ -250,6 +271,7 @@ Widget _buildSemesterSelector(
   );
 }
 
+/// 当前半学期课程数量徽标。
 Widget _buildSessionCountBadge(int sessionCount) {
   return Container(
     height: 24,
@@ -267,6 +289,9 @@ Widget _buildSessionCountBadge(int sessionCount) {
   );
 }
 
+/// 上半/下半学期切换按钮。
+///
+/// 只切换 `useFirstHalf`，课程是否显示仍由模型中的 firstHalf/secondHalf 决定。
 Widget _buildHalfSwitch(
   ScheduleController controller,
   ScheduleSemesterModel semester,
@@ -302,6 +327,7 @@ Widget _buildHalfSwitch(
   );
 }
 
+/// 课表网格区域，包含星期表头、节次时间列和每日课程卡片。
 Widget _buildScheduleGrid(
   BuildContext context,
   ScheduleController controller,
@@ -312,6 +338,7 @@ Widget _buildScheduleGrid(
   return Expanded(
     child: LayoutBuilder(
       builder: (context, constraints) {
+        // 根据屏幕宽度调整节次列和行高，避免移动端课程卡文字过度拥挤。
         final compact = constraints.maxWidth < 430;
         final timeColumnWidth = compact ? 44.0 : 52.0;
         final rowHeight = compact ? 50.0 : 54.0;
@@ -325,6 +352,7 @@ Widget _buildScheduleGrid(
           ),
           child: Column(
             children: [
+              // 顶部星期标题与下方七列课程网格对齐。
               _buildWeekHeader(timeColumnWidth, compact),
               SizedBox(
                 height: gridHeight,
@@ -332,6 +360,7 @@ Widget _buildScheduleGrid(
                   children: [
                     SizedBox(
                       width: timeColumnWidth,
+                      // 左侧节次时间列展示每节课开始时间和节次编号。
                       child: _buildSectionTimeColumn(semester, compact),
                     ),
                     for (var day = 1; day <= 7; day++)
@@ -340,7 +369,9 @@ Widget _buildScheduleGrid(
                           builder: (context, dayConstraints) {
                             return Stack(
                               children: [
+                                // 背景线条提供 13 节课的网格参考。
                                 _buildGridBackground(),
+                                // 当天课程按重叠关系合并成可点击的课程 block。
                                 ..._buildScheduleCardsByDay(
                                   context,
                                   controller,
@@ -366,6 +397,7 @@ Widget _buildScheduleGrid(
   );
 }
 
+/// 星期标题行。
 Widget _buildWeekHeader(double timeColumnWidth, bool compact) {
   const days = ['一', '二', '三', '四', '五', '六', '日'];
   return SizedBox(
@@ -390,6 +422,9 @@ Widget _buildWeekHeader(double timeColumnWidth, bool compact) {
   );
 }
 
+/// 左侧节次时间列。
+///
+/// 开始时间由 `ScheduleTimeService` 从学期节次配置中读取，越界时显示 fallback。
 Widget _buildSectionTimeColumn(ScheduleSemesterModel semester, bool compact) {
   return Column(
     children: [
@@ -422,6 +457,7 @@ Widget _buildSectionTimeColumn(ScheduleSemesterModel semester, bool compact) {
   );
 }
 
+/// 课程网格背景线，每一行对应一个节次。
 Widget _buildGridBackground() {
   return Column(
     children: [
@@ -440,6 +476,9 @@ Widget _buildGridBackground() {
   );
 }
 
+/// 构建某一天的课程卡片。
+///
+/// 课程先由 `ScheduleLayoutService` 合并重叠区间，再按 block 定位到网格高度中。
 List<Widget> _buildScheduleCardsByDay(
   BuildContext context,
   ScheduleController controller,
@@ -463,6 +502,7 @@ List<Widget> _buildScheduleCardsByDay(
             compact: compact,
             palette: palette,
             onTap: () => showScheduleSessionDetailDialog(
+              // 单课程和冲突课程都进入同一个详情弹窗，由 sessions 数量决定展示内容。
               context,
               controller,
               block.sessions,
@@ -473,6 +513,7 @@ List<Widget> _buildScheduleCardsByDay(
       .toList();
 }
 
+/// 获取半学期短名称，空名称时使用默认“上半/下半”。
 String _shortHalfName(ScheduleSemesterModel semester, bool firstHalf) {
   final halfName = firstHalf ? semester.firstHalfName : semester.secondHalfName;
   if (halfName.isEmpty) {
@@ -483,6 +524,10 @@ String _shortHalfName(ScheduleSemesterModel semester, bool firstHalf) {
 
 enum _ScheduleToolbarAction { addSession, createSemester }
 
+/// 网格中的课程卡片。
+///
+/// 单课程展示课程名和地点；重叠课程展示“冲突课程”和课程名列表；
+/// 隐藏信息模式下只显示通用文案，方便在公共场景查看课表。
 class _ScheduleCourseCard extends StatelessWidget {
   final List<ScheduleSessionModel> sessions;
   final bool hideInformation;
@@ -500,6 +545,7 @@ class _ScheduleCourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // block 内第一门课作为颜色种子，保证同一课程在不同位置颜色稳定。
     final firstSession = sessions.first;
     final color = ScheduleColorService.colorForSession(firstSession, palette);
     final foreground =
@@ -527,6 +573,7 @@ class _ScheduleCourseCard extends StatelessWidget {
           onTap: onTap,
           child: LayoutBuilder(
             builder: (context, constraints) {
+              // 根据卡片高度决定是否展示副标题，避免小节次课程文字溢出。
               final showSubtitle =
                   subtitle.isNotEmpty &&
                   !compact &&

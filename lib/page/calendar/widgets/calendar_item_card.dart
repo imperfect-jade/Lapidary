@@ -11,12 +11,16 @@ import 'package:todolist/page/calendar/utils/schedule_calendar_helpers.dart';
 import 'package:todolist/page/schedule/schedule_controller.dart';
 import 'package:todolist/page/task/task_controller.dart';
 
-// 单个事项卡片
+/// 月历事项卡片，用于展示 APP 任务或手机系统日历事件。
+///
+/// APP 任务的完成勾选仍调用 `TaskController.updateTaskStatus()`；
+/// 设备日历事件只读展示，不在卡片中修改系统日历。
 Widget buildCalendarItemCard(
   CalendarModel item,
   CalendarController calenderController,
   TaskController taskController,
 ) {
+  // source 决定卡片颜色、来源标签和是否显示完成 Checkbox。
   final isApp = item.source == 'app';
   final linkedTask = isApp ? taskController.findTaskById(item.taskId) : null;
   final color = isApp ? calendarPriorityColor(item.priority) : Colors.purple;
@@ -47,7 +51,7 @@ Widget buildCalendarItemCard(
       ),
       subtitle: Row(
         children: [
-          // 来源标签
+          // 来源标签帮助区分本地任务和手机系统日历事件。
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
             decoration: BoxDecoration(
@@ -75,16 +79,20 @@ Widget buildCalendarItemCard(
               value: item.isCompleted ?? false,
               onChanged: linkedTask == null
                   ? null
+                  // 完成状态流回任务控制器，奖励和跨模块反馈仍走任务模块原路径。
                   : (_) => taskController.updateTaskStatus(linkedTask),
             )
           : null,
-      // 点击事件显示详情
+      // 点击卡片打开详情 Sheet，可同步任务到系统日历或查看设备事件。
       onTap: () =>
           showCalendarItemDetail(item, calenderController, taskController),
     ),
   );
 }
 
+/// 当天事项列表里的课程卡片。
+///
+/// 课程数据来自当前学期和日期过滤结果，点击后进入课程详情/冲突详情弹窗。
 Widget buildScheduleSessionCalendarCard(
   BuildContext context,
   ScheduleController scheduleController,
@@ -92,6 +100,7 @@ Widget buildScheduleSessionCalendarCard(
   ScheduleSessionModel session,
   AppThemePalette palette,
 ) {
+  // 颜色和时间范围都复用课表服务，保证月历课程卡与课表网格表现一致。
   final color = ScheduleColorService.colorForSession(session, palette);
   final timeRange = scheduleSessionTimeRange(semester, session);
   final location = scheduleValueOrFallback(session.location);
@@ -122,6 +131,7 @@ Widget buildScheduleSessionCalendarCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 月历卡片只展示最关键的课程时间和地点，完整信息在详情弹窗中查看。
             _buildScheduleCalendarInfoLine(Icons.schedule, '时间：$timeRange'),
             const SizedBox(height: 2),
             _buildScheduleCalendarInfoLine(Icons.location_on, '地点：$location'),
@@ -138,6 +148,7 @@ Widget buildScheduleSessionCalendarCard(
   );
 }
 
+/// 课程卡片中的一行图标 + 文本信息。
 Widget _buildScheduleCalendarInfoLine(IconData icon, String text) {
   return Row(
     children: [

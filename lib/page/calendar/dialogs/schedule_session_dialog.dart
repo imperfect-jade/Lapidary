@@ -3,11 +3,16 @@ import 'package:get/get.dart';
 import 'package:todolist/model/schedule/schedule.dart';
 import 'package:todolist/page/schedule/schedule_controller.dart';
 
+/// 显示添加/编辑课程弹窗。
+///
+/// 弹窗只收集和校验课程表单数据，保存动作统一交给 `ScheduleController`；
+/// 传入 `session` 时为编辑模式，否则为新增模式。
 void showScheduleSessionDialog(
   BuildContext context,
   ScheduleController controller, {
   ScheduleSessionModel? session,
 }) {
+  // 文本控制器承载课程基础字段，关闭弹窗后统一释放。
   final nameController = TextEditingController(text: session?.name ?? '');
   final teacherController = TextEditingController(text: session?.teacher ?? '');
   final locationController = TextEditingController(
@@ -18,6 +23,7 @@ void showScheduleSessionDialog(
   );
   final typeController = TextEditingController(text: session?.type ?? '');
 
+  // 下拉、筛选和开关字段使用 Rx 做局部刷新，不额外引入页面级 State。
   final selectedDay = (session?.dayOfWeek ?? 1).obs;
   final startSection =
       (session?.time.isNotEmpty == true ? session!.time.first : 1).obs;
@@ -45,6 +51,7 @@ void showScheduleSessionDialog(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // 课程名是必填字段，也是课表卡片和详情页的主标题。
               TextField(
                 controller: nameController,
                 decoration: const InputDecoration(
@@ -54,6 +61,7 @@ void showScheduleSessionDialog(
                 ),
               ),
               const SizedBox(height: 10),
+              // 教师为空时保存为“未知”，保持详情展示有稳定 fallback。
               TextField(
                 controller: teacherController,
                 decoration: const InputDecoration(
@@ -63,6 +71,7 @@ void showScheduleSessionDialog(
                 ),
               ),
               const SizedBox(height: 10),
+              // 地点为空时保存为 null，展示层用 scheduleValueOrFallback 处理。
               TextField(
                 controller: locationController,
                 decoration: const InputDecoration(
@@ -76,6 +85,7 @@ void showScheduleSessionDialog(
                 children: [
                   Expanded(
                     child: Obx(
+                      // 星期决定课程进入课表的哪一列。
                       () => DropdownButtonFormField<int>(
                         key: ValueKey('day_${selectedDay.value}'),
                         initialValue: selectedDay.value,
@@ -104,6 +114,7 @@ void showScheduleSessionDialog(
                   const SizedBox(width: 8),
                   Expanded(
                     child: Obx(
+                      // 开始节改变时会自动拉齐结束节，避免出现倒置时间段。
                       () => DropdownButtonFormField<int>(
                         key: ValueKey('start_${startSection.value}'),
                         initialValue: startSection.value,
@@ -127,6 +138,7 @@ void showScheduleSessionDialog(
                   const SizedBox(width: 8),
                   Expanded(
                     child: Obx(
+                      // 结束节改变时也会自动修正开始节，确保 time 连续合法。
                       () => DropdownButtonFormField<int>(
                         key: ValueKey('end_${endSection.value}'),
                         initialValue: endSection.value,
@@ -151,6 +163,7 @@ void showScheduleSessionDialog(
               ),
               const SizedBox(height: 8),
               Obx(
+                // 半学期、单双周和线上标签共同决定课程在课表和月历中的展示条件。
                 () => Wrap(
                   spacing: 4,
                   runSpacing: 0,
@@ -185,6 +198,7 @@ void showScheduleSessionDialog(
               ),
               const SizedBox(height: 4),
               Obx(
+                // 开启自定义上课周后，会用具体周次覆盖单双周过滤规则。
                 () => SwitchListTile(
                   dense: true,
                   contentPadding: EdgeInsets.zero,
@@ -199,6 +213,7 @@ void showScheduleSessionDialog(
                 }
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
+                  // 自定义周次支持逗号、中文逗号和空白分隔，解析逻辑在 _parseCustomWeeks。
                   child: TextField(
                     controller: customWeeksController,
                     decoration: const InputDecoration(
@@ -211,6 +226,7 @@ void showScheduleSessionDialog(
                 );
               }),
               TextField(
+                // 课程类型为可选展示字段，不参与日期过滤或网格布局。
                 controller: typeController,
                 decoration: const InputDecoration(
                   labelText: '课程类型',
@@ -227,6 +243,7 @@ void showScheduleSessionDialog(
         TextButton(onPressed: () => Get.back(), child: const Text('取消')),
         ElevatedButton(
           onPressed: () async {
+            // 表单校验只检查必要边界，避免保存无法显示或无重复规则的课程。
             final name = nameController.text.trim();
             if (name.isEmpty) {
               Get.snackbar(
@@ -263,6 +280,7 @@ void showScheduleSessionDialog(
               return;
             }
 
+            // 将起止节转换为连续节次数组，课表布局服务依赖这个列表定位卡片。
             final scheduleSession = ScheduleSessionModel(
               id: session?.id,
               name: name,
@@ -293,8 +311,10 @@ void showScheduleSessionDialog(
             );
 
             if (session == null) {
+              // 新增课程由 Controller 补 id 并写入当前学期。
               await controller.addSession(scheduleSession);
             } else {
+              // 编辑课程保留原 id，只替换当前学期中的对应 session。
               await controller.updateSession(scheduleSession);
             }
             Get.back();
@@ -304,6 +324,7 @@ void showScheduleSessionDialog(
       ],
     ),
   ).whenComplete(() {
+    // 释放所有文本控制器，防止多次打开弹窗后泄漏。
     nameController.dispose();
     teacherController.dispose();
     locationController.dispose();
@@ -312,6 +333,7 @@ void showScheduleSessionDialog(
   });
 }
 
+/// 构建 1-13 节的下拉选项。
 List<DropdownMenuItem<int>> _sectionItems() {
   return List.generate(
     13,
@@ -319,6 +341,9 @@ List<DropdownMenuItem<int>> _sectionItems() {
   );
 }
 
+/// 解析自定义上课周输入。
+///
+/// 支持英文逗号、中文逗号和空白分隔；无效项会被忽略，结果去重并排序。
 List<int> _parseCustomWeeks(String input) {
   return input
       .split(RegExp(r'[,，\s]+'))

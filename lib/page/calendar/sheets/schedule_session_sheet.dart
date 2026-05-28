@@ -6,11 +6,16 @@ import 'package:todolist/page/calendar/dialogs/schedule_session_dialog.dart';
 import 'package:todolist/page/calendar/utils/formatters.dart';
 import 'package:todolist/page/schedule/schedule_controller.dart';
 
+/// 显示课程详情弹窗。
+///
+/// 单课程时展示完整字段并提供编辑/删除入口；多课程时视为冲突课程，
+/// 展示每门课的摘要和独立编辑/删除按钮。
 void showScheduleSessionDetailDialog(
   BuildContext context,
   ScheduleController controller,
   List<ScheduleSessionModel> sessions,
 ) {
+  // 课程 block 可能包含多个重叠课程，标题和内容根据数量切换。
   final title = sessions.length == 1 ? sessions.first.name : '冲突课程';
   final singleSession = sessions.length == 1 ? sessions.first : null;
 
@@ -23,6 +28,7 @@ void showScheduleSessionDetailDialog(
       content: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: 430, maxHeight: Get.height * 0.7),
         child: SingleChildScrollView(
+          // 单课程展示字段详情，冲突课程展示可分别处理的课程列表。
           child: singleSession == null
               ? _buildScheduleConflictContent(context, controller, sessions)
               : _buildScheduleSessionDetailContent(singleSession),
@@ -33,6 +39,7 @@ void showScheduleSessionDetailDialog(
           TextButton.icon(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () {
+              // 删除先关闭详情弹窗，再打开二次确认，避免弹窗层叠过深。
               Get.back();
               _confirmDeleteScheduleSession(controller, singleSession);
             },
@@ -41,6 +48,7 @@ void showScheduleSessionDetailDialog(
           ),
           TextButton.icon(
             onPressed: () {
+              // 编辑复用课程表单，传入当前 session 即进入编辑模式。
               Get.back();
               showScheduleSessionDialog(
                 context,
@@ -58,6 +66,7 @@ void showScheduleSessionDetailDialog(
   );
 }
 
+/// 单课程详情内容，展示时间、教师、地点、重复规则、半学期和可选字段。
 Widget _buildScheduleSessionDetailContent(ScheduleSessionModel session) {
   return Column(
     mainAxisSize: MainAxisSize.min,
@@ -76,6 +85,9 @@ Widget _buildScheduleSessionDetailContent(ScheduleSessionModel session) {
   );
 }
 
+/// 冲突课程详情内容。
+///
+/// 每一项都可单独编辑或删除，避免用户需要回到课表网格猜测是哪门课冲突。
 Widget _buildScheduleConflictContent(
   BuildContext context,
   ScheduleController controller,
@@ -113,6 +125,7 @@ Widget _buildScheduleConflictContent(
                       icon: const Icon(Icons.edit_outlined),
                       tooltip: '编辑',
                       onPressed: () {
+                        // 关闭冲突详情后打开对应课程编辑弹窗。
                         Get.back();
                         showScheduleSessionDialog(
                           context,
@@ -126,6 +139,7 @@ Widget _buildScheduleConflictContent(
                       icon: const Icon(Icons.delete_outline, color: Colors.red),
                       tooltip: '删除',
                       onPressed: () {
+                        // 删除仍走二次确认，防止误删冲突列表中的课程。
                         Get.back();
                         _confirmDeleteScheduleSession(controller, session);
                       },
@@ -149,6 +163,7 @@ Widget _buildScheduleConflictContent(
   );
 }
 
+/// 课程详情中的一行标签和值。
 Widget _scheduleDetailRow(String label, String value, {Color? valueColor}) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 10),
@@ -173,6 +188,9 @@ Widget _scheduleDetailRow(String label, String value, {Color? valueColor}) {
   );
 }
 
+/// 删除课程前的二次确认弹窗。
+///
+/// 确认后调用 `ScheduleController.deleteSession()`，由 Controller 保存当前学期。
 void _confirmDeleteScheduleSession(
   ScheduleController controller,
   ScheduleSessionModel session,

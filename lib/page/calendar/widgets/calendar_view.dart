@@ -11,13 +11,17 @@ import 'package:todolist/page/calendar/utils/schedule_calendar_helpers.dart';
 import 'package:todolist/page/schedule/schedule_controller.dart';
 import 'package:todolist/page/task/task_controller.dart';
 
-// 日历视图
+/// 月历视图，展示日期网格和任务/课程 marker。
+///
+/// 日期选择写入 `CalendarController.selectedDate` 并触发系统日历事件读取；
+/// marker 同时来自任务截止日期和课表课程，不在这里修改任务或课表数据。
 Widget buildCalendarView(
   CalendarController calenderController,
   TaskController taskController,
   ScheduleController scheduleController,
 ) {
   return Obx(() {
+    // 选中日期驱动 focusedDay/selectedDay，主题色用于课程 marker 配色。
     final selected = calenderController.selectedDate.value;
     final palette = Get.isRegistered<ThemeController>()
         ? Get.find<ThemeController>().currentPalette
@@ -29,13 +33,13 @@ Widget buildCalendarView(
       focusedDay: selected,
       selectedDayPredicate: (day) => isSameDay(selected, day),
 
-      // 点击日期
+      // 点击日期会切换当天事项列表，并异步刷新该日手机日历事件。
       onDaySelected: (selected, focused) {
         calenderController.selectedDate.value = selected;
         calenderController.loadDeviceEvents(selected);
       },
 
-      // 有任务或课程的日期下方显示标记点
+      // 有任务或课程的日期下方显示标记点，TableCalendar 只关心非空事件列表。
       eventLoader: (day) {
         return <Object>[
           ...taskController.tasksForDay(day),
@@ -43,7 +47,7 @@ Widget buildCalendarView(
         ];
       },
 
-      // 样式
+      // 月历基础样式，marker 颜色由自定义 markerBuilder 决定。
       calendarStyle: CalendarStyle(
         todayDecoration: BoxDecoration(
           color: Colors.blue.withValues(alpha: 0.3),
@@ -65,6 +69,7 @@ Widget buildCalendarView(
           if (events.isEmpty) {
             return null;
           }
+          // 最多展示 4 个点，任务按优先级配色，课程按课表颜色算法配色。
           return _buildCalendarMarkers(events, palette);
         },
       ),
@@ -77,6 +82,7 @@ Widget buildCalendarView(
   });
 }
 
+/// 构建日期格下方的小圆点 marker。
 Widget _buildCalendarMarkers(List<Object> events, AppThemePalette palette) {
   final visibleEvents = events.take(4).toList();
   return Positioned(
@@ -100,6 +106,9 @@ Widget _buildCalendarMarkers(List<Object> events, AppThemePalette palette) {
   );
 }
 
+/// 根据事项类型返回 marker 颜色。
+///
+/// 课程使用稳定 hash 色，任务使用优先级色，未知类型退回灰色。
 Color _calendarMarkerColor(Object event, AppThemePalette palette) {
   if (event is ScheduleSessionModel) {
     return ScheduleColorService.colorForSession(event, palette);

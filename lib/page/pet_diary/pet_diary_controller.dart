@@ -34,7 +34,7 @@ class PetDiaryController extends GetxController {
     todayDiary.value = diaryRepository.getById(_dateId(DateTime.now()));
   }
 
-  Future<PetDiaryModel> ensureTodayDiary() async {
+  Future<PetDiaryModel?> ensureTodayDiary() async {
     final now = DateTime.now();
     final existing = diaryRepository.getById(_dateId(now));
     if (existing != null) {
@@ -44,7 +44,7 @@ class PetDiaryController extends GetxController {
     return _generateAndSave(now);
   }
 
-  Future<PetDiaryModel> regenerateTodayDiary() {
+  Future<PetDiaryModel?> regenerateTodayDiary() {
     return _generateAndSave(DateTime.now());
   }
 
@@ -52,11 +52,25 @@ class PetDiaryController extends GetxController {
     return diaryRepository.getById(_dateId(date));
   }
 
-  Future<PetDiaryModel> _generateAndSave(DateTime date) async {
+  bool hasDiarySourceDataForDate(DateTime date) {
+    return _collectStats(_dayStart(date)).hasSourceData;
+  }
+
+  Future<PetDiaryModel?> _generateAndSave(DateTime date) async {
     isGenerating.value = true;
     try {
       final day = _dayStart(date);
       final stats = _collectStats(day);
+      if (!stats.hasSourceData) {
+        final existing = diaryRepository.getById(_dateId(day));
+        if (existing != null) {
+          _syncDiaryState(existing);
+        } else if (_dateId(day) == _dateId(DateTime.now())) {
+          todayDiary.value = null;
+        }
+        return existing;
+      }
+
       final pet = await petRepository.getDefaultPet();
       final diary = PetDiaryModel(
         id: _dateId(day),
@@ -171,6 +185,8 @@ class _PetDiaryStats {
   final int focusMinutes;
   final int focusSessionCount;
   final int lateNightTaskCount;
+
+  bool get hasSourceData => completedTaskCount > 0 || focusSessionCount > 0;
 
   const _PetDiaryStats({
     required this.completedTaskCount,

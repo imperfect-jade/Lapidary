@@ -3,9 +3,8 @@ import 'package:get/get.dart';
 import 'package:todolist/constants/theme.dart';
 import 'package:todolist/model/pet_diary/pet_diary.dart';
 import 'package:todolist/page/pet_diary/pet_diary_controller.dart';
-import 'package:todolist/page/pet_diary/pet_diary_page.dart';
 
-/// 宠物页中的今日日记小纸条。
+/// 宠物日记页中的今日日记小纸条。
 ///
 /// 组件只消费 `PetDiaryController` 的响应式状态：展示今日日记、触发刷新、
 /// 跳转历史页，不修改日记统计口径或模板生成规则。
@@ -19,6 +18,12 @@ class PetDiaryCard extends StatelessWidget {
     return Obx(() {
       final diary = controller.todayDiary.value;
       final isGenerating = controller.isGenerating.value;
+      final canGenerate =
+          diary != null || controller.hasDiarySourceDataForDate(DateTime.now());
+
+      if (!canGenerate && !isGenerating) {
+        return const SizedBox.shrink();
+      }
 
       return RepaintBoundary(
         child: AnimatedSwitcher(
@@ -96,7 +101,11 @@ class _DiaryContent extends StatelessWidget {
         const SizedBox(height: 12),
         _DiaryStatsWrap(diary: diary),
         const SizedBox(height: 10),
-        _DiaryActions(controller: controller, isGenerating: isGenerating),
+        _DiaryActions(
+          controller: controller,
+          isGenerating: isGenerating,
+          hasDiary: true,
+        ),
       ],
     );
   }
@@ -115,11 +124,15 @@ class _EmptyDiaryContent extends StatelessWidget {
         const _DiaryHeader(date: '今天'),
         const SizedBox(height: 10),
         const Text(
-          '今天的小纸条还没有写好，刷新一下就能生成。',
+          '今天有新的记录，可以生成一张宠物日记小纸条。',
           style: TextStyle(fontSize: 14, height: 1.5, color: Color(0xFF5C665A)),
         ),
         const SizedBox(height: 10),
-        _DiaryActions(controller: controller, isGenerating: false),
+        _DiaryActions(
+          controller: controller,
+          isGenerating: false,
+          hasDiary: false,
+        ),
       ],
     );
   }
@@ -227,8 +240,13 @@ class _DiaryStatsWrap extends StatelessWidget {
 class _DiaryActions extends StatelessWidget {
   final PetDiaryController controller;
   final bool isGenerating;
+  final bool hasDiary;
 
-  const _DiaryActions({required this.controller, required this.isGenerating});
+  const _DiaryActions({
+    required this.controller,
+    required this.isGenerating,
+    required this.hasDiary,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -239,15 +257,6 @@ class _DiaryActions extends StatelessWidget {
         spacing: 4,
         runSpacing: 4,
         children: [
-          TextButton.icon(
-            onPressed: () => Get.to(() => const PetDiaryPage()),
-            icon: const Icon(Icons.history_outlined, size: 18),
-            label: const Text('查看历史'),
-            style: TextButton.styleFrom(
-              foregroundColor: TaskTheme.selectedColor,
-              visualDensity: VisualDensity.compact,
-            ),
-          ),
           TextButton.icon(
             onPressed: isGenerating
                 ? null
@@ -266,7 +275,7 @@ class _DiaryActions extends StatelessWidget {
                     ),
                   )
                 : const Icon(Icons.refresh_rounded, size: 18),
-            label: Text(isGenerating ? '刷新中' : '刷新今日'),
+            label: Text(isGenerating ? '刷新中' : (hasDiary ? '刷新今日' : '生成今日')),
             style: TextButton.styleFrom(
               foregroundColor: TaskTheme.selectedColor,
               disabledForegroundColor: TaskTheme.selectedColor.withValues(

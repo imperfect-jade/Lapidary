@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:todolist/constants/theme.dart';
 import 'package:todolist/model/pet_diary/pet_diary.dart';
+import 'package:todolist/page/pet/widgets/pet_diary_card.dart';
 import 'package:todolist/page/pet_diary/pet_diary_controller.dart';
 
 /// 宠物日记历史页。
@@ -36,21 +37,38 @@ class _PetDiaryPageState extends State<PetDiaryPage> {
       ),
       body: Obx(() {
         final diaries = controller.diaries;
-        if (diaries.isEmpty) {
+        final todayDiary = controller.todayDiary.value;
+        final showTodayEntry =
+            todayDiary != null ||
+            controller.isGenerating.value ||
+            controller.hasDiarySourceDataForDate(DateTime.now());
+        final historyDiaries = todayDiary == null
+            ? diaries.toList()
+            : diaries.where((diary) => diary.id != todayDiary.id).toList();
+
+        if (!showTodayEntry && diaries.isEmpty) {
           return const _EmptyDiaryState();
         }
 
-        return ListView.separated(
+        return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          itemCount: diaries.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final diary = diaries[index];
-            return _DiaryHistoryTile(
-              diary: diary,
-              onTap: () => _showDiaryDetail(context, diary),
-            );
-          },
+          children: [
+            if (showTodayEntry) ...[
+              PetDiaryCard(controller: controller),
+              if (historyDiaries.isNotEmpty) const SizedBox(height: 18),
+            ],
+            if (historyDiaries.isNotEmpty) ...[
+              const _SectionTitle(title: '历史日记'),
+              const SizedBox(height: 10),
+              for (final diary in historyDiaries) ...[
+                _DiaryHistoryTile(
+                  diary: diary,
+                  onTap: () => _showDiaryDetail(context, diary),
+                ),
+                const SizedBox(height: 12),
+              ],
+            ],
+          ],
         );
       }),
     );
@@ -119,6 +137,24 @@ class _PetDiaryPageState extends State<PetDiaryPage> {
           ),
         );
       },
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+
+  const _SectionTitle({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w800,
+        color: Color(0xFF2F3A31),
+      ),
     );
   }
 }

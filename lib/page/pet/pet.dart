@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:todolist/constants/theme.dart';
 import 'package:todolist/page/pet/pet_controller.dart';
+import 'package:todolist/page/pet/widgets/pet_diary_card.dart';
+import 'package:todolist/page/pet_diary/pet_diary_controller.dart';
 import 'package:todolist/page/pet/reward_controller.dart';
 
 import 'widgets/action_bar.dart';
@@ -26,12 +30,14 @@ class _PetPageState extends State<PetPage> {
   // 页面层依赖全局注册的控制器：宠物控制器驱动展示和交互，奖励控制器提供积分和库存。
   final PetController controller = Get.find<PetController>();
   final RewardController rewardController = Get.find<RewardController>();
+  final PetDiaryController diaryController = Get.find<PetDiaryController>();
 
   @override
   void initState() {
     super.initState();
     // 进入页面时主动刷新一次离线衰减/睡眠恢复，避免展示上次打开时的旧状态。
-    controller.refreshPetState();
+    unawaited(controller.refreshPetState());
+    unawaited(diaryController.ensureTodayDiary());
   }
 
   @override
@@ -82,6 +88,8 @@ class _PetPageState extends State<PetPage> {
                 PetStage(controller: controller, pet: pet),
                 const SizedBox(height: 18),
                 // 成长面板展示名称、等级和经验进度，经验阈值由 PetStateService 计算。
+                PetDiaryCard(controller: diaryController),
+                const SizedBox(height: 14),
                 PetGrowthPanel(controller: controller, pet: pet),
                 const SizedBox(height: 14),
                 // 三项状态网格只读展示心情、饱腹和精力，不在 UI 层修改数值。

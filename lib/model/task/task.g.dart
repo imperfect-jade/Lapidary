@@ -30,13 +30,14 @@ class TaskModelAdapter extends TypeAdapter<TaskModel> {
       overdueMoodPenaltyApplied: fields[10] == null
           ? false
           : fields[10] as bool,
+      completedAt: fields[11] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, TaskModel obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -58,7 +59,9 @@ class TaskModelAdapter extends TypeAdapter<TaskModel> {
       ..writeByte(9)
       ..write(obj.focusTargetMinutes)
       ..writeByte(10)
-      ..write(obj.overdueMoodPenaltyApplied);
+      ..write(obj.overdueMoodPenaltyApplied)
+      ..writeByte(11)
+      ..write(obj.completedAt);
   }
 
   @override

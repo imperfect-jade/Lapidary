@@ -122,6 +122,7 @@ class TaskController extends GetxController {
   Future<void> updateTaskStatus(TaskModel task) async {
     final wasCompleted = task.isCompleted;
     task.isCompleted = !task.isCompleted;
+    task.completedAt = task.isCompleted ? DateTime.now() : null;
     await repository.save(task);
     if (!wasCompleted && task.isCompleted) {
       // 只有首次从未完成切到完成时发放奖励，取消完成不触发反向奖励流程。

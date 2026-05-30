@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
@@ -7,6 +8,7 @@ import 'package:todolist/data/repositories/pet_diary_repository.dart';
 import 'package:todolist/data/repositories/pet_repository.dart';
 import 'package:todolist/data/repositories/pomodoro_repository.dart';
 import 'package:todolist/data/repositories/task_repository.dart';
+import 'package:todolist/features/pet_diary/services/pet_diary_template_service.dart';
 import 'package:todolist/model/pet/pet.dart';
 import 'package:todolist/model/pet_diary/pet_diary.dart';
 import 'package:todolist/model/pomodoro/pomodoro.dart';
@@ -65,8 +67,7 @@ void main() {
     expect(diary, isNotNull);
     expect(diary!.completedTaskCount, 2);
     expect(diary.diaryText, contains('今天你完成了 2 个任务'));
-    expect(diary.diaryText, contains('稳稳推进'));
-    expect(diary.diaryText, isNot(contains('没关系，我们明天先从一个很小的任务开始')));
+    expect(diary.diaryText, isNot(contains('明天先从一件很小的事开始')));
   });
 
   test(
@@ -89,7 +90,7 @@ void main() {
           focusMinutes: 0,
           focusSessionCount: 0,
           lateNightTaskCount: 0,
-          diaryText: '今天你完成了 2 个任务\n旧日记',
+          diaryText: '旧日记',
           generatedAt: now,
         ),
       );
@@ -119,6 +120,7 @@ PetDiaryController _controller({
     TaskRepository(box: taskBox),
     PomodoroRepository(box: pomodoroBox),
     PetRepository(box: petBox),
+    PetDiaryTemplateService(random: Random(1)),
   );
 }
 

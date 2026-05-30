@@ -10,6 +10,7 @@ import 'package:todolist/data/repositories/theme_settings_repository.dart';
 import 'package:todolist/features/pet/services/pet_feedback_service.dart';
 import 'package:todolist/features/pet/services/pet_message_service.dart';
 import 'package:todolist/features/pet/services/pet_state_service.dart';
+import 'package:todolist/features/pet_diary/services/pet_diary_template_service.dart';
 import 'package:todolist/features/productivity/services/productivity_feedback_service.dart';
 import 'package:todolist/page/calendar/calendar_controller.dart';
 import 'package:todolist/page/home/home_controller.dart';
@@ -31,6 +32,7 @@ void registerAppControllers() {
   _putDependency(() => PetStateService());
   _putDependency(() => PetMessageService());
   _putDependency(() => PetFeedbackService());
+  _putDependency(() => PetDiaryTemplateService());
 
   _putController(() => ThemeController(Get.find<ThemeSettingsRepository>()));
   _putController(() => RewardController(Get.find<RewardRepository>()));
@@ -66,6 +68,7 @@ void registerAppControllers() {
       Get.find<TaskRepository>(),
       Get.find<PomodoroRepository>(),
       Get.find<PetRepository>(),
+      Get.find<PetDiaryTemplateService>(),
     ),
   );
   _putController(() => CalendarController());

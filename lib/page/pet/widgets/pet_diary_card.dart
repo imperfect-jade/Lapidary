@@ -27,21 +27,24 @@ class PetDiaryCard extends StatelessWidget {
 
       return RepaintBoundary(
         child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 180),
-          child: diary == null && isGenerating
-              ? _DiaryPaper(
-                  key: const ValueKey('pet-diary-loading'),
-                  child: _LoadingContent(message: '正在写今天的小纸条...'),
+          duration: const Duration(milliseconds: 260),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          child: diary == null
+              ? _EmptyDiaryContent(
+                  key: ValueKey(
+                    'pet-letter-${isGenerating ? 'writing' : 'closed'}',
+                  ),
+                  controller: controller,
+                  isGenerating: isGenerating,
                 )
               : _DiaryPaper(
-                  key: ValueKey(diary?.id ?? 'pet-diary-empty'),
-                  child: diary == null
-                      ? _EmptyDiaryContent(controller: controller)
-                      : _DiaryContent(
-                          diary: diary,
-                          controller: controller,
-                          isGenerating: isGenerating,
-                        ),
+                  key: ValueKey('pet-letter-open-${diary.id}'),
+                  child: _DiaryContent(
+                    diary: diary,
+                    controller: controller,
+                    isGenerating: isGenerating,
+                  ),
                 ),
         ),
       );
@@ -58,15 +61,31 @@ class _DiaryPaper extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF2),
+        color: const Color(0xFFFFFBF1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: TaskTheme.selectedColor.withValues(alpha: 0.18),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: child,
+      child: Stack(
+        children: [
+          Padding(padding: const EdgeInsets.only(right: 42), child: child),
+          Positioned(
+            right: 0,
+            top: 0,
+            child: _LetterStamp(color: TaskTheme.selectedColor),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -113,60 +132,62 @@ class _DiaryContent extends StatelessWidget {
 
 class _EmptyDiaryContent extends StatelessWidget {
   final PetDiaryController controller;
+  final bool isGenerating;
 
-  const _EmptyDiaryContent({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _DiaryHeader(date: '今天'),
-        const SizedBox(height: 10),
-        const Text(
-          '今天有新的记录，可以生成一张宠物日记小纸条。',
-          style: TextStyle(fontSize: 14, height: 1.5, color: Color(0xFF5C665A)),
-        ),
-        const SizedBox(height: 10),
-        _DiaryActions(
-          controller: controller,
-          isGenerating: false,
-          hasDiary: false,
-        ),
-      ],
-    );
-  }
-}
-
-class _LoadingContent extends StatelessWidget {
-  final String message;
-
-  const _LoadingContent({required this.message});
+  const _EmptyDiaryContent({
+    super.key,
+    required this.controller,
+    required this.isGenerating,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 18,
-          height: 18,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(TaskTheme.selectedColor),
+    final accent = TaskTheme.selectedColor;
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 188),
+      child: CustomPaint(
+        painter: _EnvelopePainter(accent: accent),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _EnvelopePostage(color: accent),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      isGenerating ? '正在写信...' : '小云给你准备了一封今日来信',
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF2F3A31),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                isGenerating ? '小云正在把今天的努力整理成一句温柔的话。' : '今天的努力已经装进信封里，拆开看看吧。',
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.45,
+                  color: Color(0xFF5C665A),
+                ),
+              ),
+              const SizedBox(height: 18),
+              _DiaryActions(
+                controller: controller,
+                isGenerating: isGenerating,
+                hasDiary: false,
+              ),
+            ],
           ),
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            message,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF5C665A),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -181,14 +202,14 @@ class _DiaryHeader extends StatelessWidget {
     return Row(
       children: [
         Icon(
-          Icons.sticky_note_2_outlined,
+          Icons.mark_email_read_outlined,
           size: 20,
           color: TaskTheme.selectedColor,
         ),
         const SizedBox(width: 8),
         const Expanded(
           child: Text(
-            '今日宠物日记',
+            '今日来信',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
@@ -274,8 +295,15 @@ class _DiaryActions extends StatelessWidget {
                       ),
                     ),
                   )
-                : const Icon(Icons.refresh_rounded, size: 18),
-            label: Text(isGenerating ? '刷新中' : (hasDiary ? '刷新今日' : '生成今日')),
+                : Icon(
+                    hasDiary
+                        ? Icons.edit_note_outlined
+                        : Icons.mark_email_unread_outlined,
+                    size: 18,
+                  ),
+            label: Text(
+              isGenerating ? '正在写信...' : (hasDiary ? '重新写一封' : '拆开今日来信'),
+            ),
             style: TextButton.styleFrom(
               foregroundColor: TaskTheme.selectedColor,
               disabledForegroundColor: TaskTheme.selectedColor.withValues(
@@ -323,6 +351,121 @@ class _DiaryChip extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _EnvelopePostage extends StatelessWidget {
+  final Color color;
+
+  const _EnvelopePostage({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.76),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
+      ),
+      child: Icon(Icons.pets_outlined, size: 22, color: color),
+    );
+  }
+}
+
+class _LetterStamp extends StatelessWidget {
+  final Color color;
+
+  const _LetterStamp({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
+      ),
+      child: Icon(Icons.favorite_border, size: 19, color: color),
+    );
+  }
+}
+
+class _EnvelopePainter extends CustomPainter {
+  final Color accent;
+
+  const _EnvelopePainter({required this.accent});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(8));
+    canvas.clipRRect(rrect);
+
+    final basePaint = Paint()..color = const Color(0xFFFFF3DD);
+    final flapPaint = Paint()..color = const Color(0xFFFFE8C2);
+    final linePaint = Paint()
+      ..color = accent.withValues(alpha: 0.18)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+
+    canvas.drawRRect(rrect, basePaint);
+
+    final topFlap = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width / 2, size.height * 0.48)
+      ..lineTo(size.width, 0)
+      ..close();
+    canvas.drawPath(topFlap, flapPaint);
+
+    final bottomFlap = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(size.width / 2, size.height * 0.50)
+      ..lineTo(size.width, size.height)
+      ..close();
+    canvas.drawPath(bottomFlap, Paint()..color = const Color(0xFFFFF7E8));
+
+    canvas.drawLine(
+      Offset.zero,
+      Offset(size.width / 2, size.height * 0.48),
+      linePaint,
+    );
+    canvas.drawLine(
+      Offset(size.width, 0),
+      Offset(size.width / 2, size.height * 0.48),
+      linePaint,
+    );
+    canvas.drawLine(
+      Offset(0, size.height),
+      Offset(size.width / 2, size.height * 0.50),
+      linePaint,
+    );
+    canvas.drawLine(
+      Offset(size.width, size.height),
+      Offset(size.width / 2, size.height * 0.50),
+      linePaint,
+    );
+    canvas.drawRRect(rrect.deflate(0.6), linePaint);
+
+    final sealCenter = Offset(size.width / 2, size.height * 0.50);
+    canvas.drawCircle(
+      sealCenter,
+      20,
+      Paint()..color = accent.withValues(alpha: 0.16),
+    );
+    canvas.drawCircle(
+      sealCenter,
+      13,
+      Paint()..color = accent.withValues(alpha: 0.28),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _EnvelopePainter oldDelegate) {
+    return oldDelegate.accent != accent;
   }
 }
 

@@ -30,13 +30,31 @@ class PetDiaryController extends GetxController {
   }
 
   void loadDiaries() {
-    diaries.assignAll(diaryRepository.latestFirst());
-    todayDiary.value = diaryRepository.getById(_dateId(DateTime.now()));
+    final today = DateTime.now();
+    final todayId = _dateId(today);
+    final latestDiaries = diaryRepository.latestFirst();
+    if (!hasDiarySourceDataForDate(today)) {
+      todayDiary.value = null;
+      diaries.assignAll(latestDiaries.where((diary) => diary.id != todayId));
+      return;
+    }
+
+    diaries.assignAll(latestDiaries);
+    todayDiary.value = diaryRepository.getById(todayId);
   }
 
   Future<PetDiaryModel?> ensureTodayDiary() async {
     final now = DateTime.now();
-    final existing = diaryRepository.getById(_dateId(now));
+    final todayId = _dateId(now);
+    if (!hasDiarySourceDataForDate(now)) {
+      todayDiary.value = null;
+      diaries.assignAll(
+        diaryRepository.latestFirst().where((diary) => diary.id != todayId),
+      );
+      return null;
+    }
+
+    final existing = diaryRepository.getById(todayId);
     if (existing != null) {
       _syncDiaryState(existing);
       return existing;
@@ -62,13 +80,15 @@ class PetDiaryController extends GetxController {
       final day = _dayStart(date);
       final stats = _collectStats(day);
       if (!stats.hasSourceData) {
-        final existing = diaryRepository.getById(_dateId(day));
-        if (existing != null) {
-          _syncDiaryState(existing);
-        } else if (_dateId(day) == _dateId(DateTime.now())) {
+        final diaryId = _dateId(day);
+        if (diaryId == _dateId(DateTime.now())) {
           todayDiary.value = null;
+          diaries.assignAll(
+            diaryRepository.latestFirst().where((diary) => diary.id != diaryId),
+          );
+          return null;
         }
-        return existing;
+        return diaryRepository.getById(diaryId);
       }
 
       final pet = await petRepository.getDefaultPet();
@@ -144,6 +164,9 @@ class PetDiaryController extends GetxController {
     }
     if (stats.completedTaskCount == 1) {
       return '能开始就已经很好了。明天我们继续慢慢来。';
+    }
+    if (stats.completedTaskCount >= 2) {
+      return '今天你稳稳推进了几件事，已经很不错了。明天我们继续照顾好自己的节奏。';
     }
     if (stats.focusMinutes > 0) {
       return '不是每一天都要立刻有结果，愿意坐下来就很棒。';

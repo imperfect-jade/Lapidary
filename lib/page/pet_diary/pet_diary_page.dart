@@ -29,7 +29,7 @@ class _PetDiaryPageState extends State<PetDiaryPage> {
     return Scaffold(
       backgroundColor: TaskTheme.primaryColor,
       appBar: AppBar(
-        title: const Text('宠物日记'),
+        title: const Text('宠物来信'),
         centerTitle: true,
         backgroundColor: TaskTheme.appBarColor,
         foregroundColor: Colors.black,
@@ -58,7 +58,7 @@ class _PetDiaryPageState extends State<PetDiaryPage> {
               if (historyDiaries.isNotEmpty) const SizedBox(height: 18),
             ],
             if (historyDiaries.isNotEmpty) ...[
-              const _SectionTitle(title: '历史日记'),
+              const _SectionTitle(title: '往日来信'),
               const SizedBox(height: 10),
               for (final diary in historyDiaries) ...[
                 _DiaryHistoryTile(
@@ -78,18 +78,26 @@ class _PetDiaryPageState extends State<PetDiaryPage> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
       builder: (context) {
         return SafeArea(
-          child: Padding(
+          child: Container(
+            margin: const EdgeInsets.all(12),
             padding: EdgeInsets.fromLTRB(
               20,
               18,
               20,
               MediaQuery.of(context).viewInsets.bottom + 18,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFBF1),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: TaskTheme.selectedColor.withValues(alpha: 0.18),
+              ),
             ),
             child: SingleChildScrollView(
               child: Column(
@@ -99,13 +107,13 @@ class _PetDiaryPageState extends State<PetDiaryPage> {
                   Row(
                     children: [
                       Icon(
-                        Icons.sticky_note_2_outlined,
+                        Icons.mark_email_read_outlined,
                         color: TaskTheme.selectedColor,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          _formatDate(diary.date),
+                          '一封往日来信 · ${_formatDate(diary.date)}',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -173,60 +181,130 @@ class _DiaryHistoryTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Ink(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFFCF2),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: TaskTheme.selectedColor.withValues(alpha: 0.16),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+          child: CustomPaint(
+            painter: _HistoryEnvelopePainter(accent: TaskTheme.selectedColor),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.menu_book_outlined,
-                    size: 20,
-                    color: TaskTheme.selectedColor,
-                  ),
-                  const SizedBox(width: 8),
+                  _HistoryPostage(color: TaskTheme.selectedColor),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      _formatDate(diary.date),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF2F3A31),
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _formatDate(diary.date),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF2F3A31),
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.mark_email_read_outlined,
+                              size: 19,
+                              color: TaskTheme.selectedColor.withValues(
+                                alpha: 0.72,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 7),
+                        Text(
+                          diary.diaryText.replaceAll('\n', ' '),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            height: 1.4,
+                            color: Color(0xFF5C665A),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        _DiaryStatsWrap(diary: diary),
+                      ],
                     ),
-                  ),
-                  Icon(
-                    Icons.keyboard_arrow_up_rounded,
-                    size: 20,
-                    color: TaskTheme.selectedColor.withValues(alpha: 0.68),
                   ),
                 ],
               ),
-              const SizedBox(height: 9),
-              Text(
-                diary.diaryText.replaceAll('\n', ' '),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 14,
-                  height: 1.45,
-                  color: Color(0xFF5C665A),
-                ),
-              ),
-              const SizedBox(height: 12),
-              _DiaryStatsWrap(diary: diary),
-            ],
+            ),
           ),
         ),
       ),
     );
+  }
+}
+
+class _HistoryPostage extends StatelessWidget {
+  final Color color;
+
+  const _HistoryPostage({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 42,
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Icon(Icons.favorite_border, size: 22, color: color),
+    );
+  }
+}
+
+class _HistoryEnvelopePainter extends CustomPainter {
+  final Color accent;
+
+  const _HistoryEnvelopePainter({required this.accent});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(8));
+    canvas.clipRRect(rrect);
+
+    final basePaint = Paint()..color = const Color(0xFFFFFCF2);
+    final flapPaint = Paint()..color = const Color(0xFFFFEFD5);
+    final linePaint = Paint()
+      ..color = accent.withValues(alpha: 0.13)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    canvas.drawRRect(rrect, basePaint);
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, 0)
+        ..lineTo(size.width * 0.42, size.height * 0.52)
+        ..lineTo(0, size.height)
+        ..close(),
+      flapPaint,
+    );
+    canvas.drawLine(
+      Offset.zero,
+      Offset(size.width * 0.42, size.height * 0.52),
+      linePaint,
+    );
+    canvas.drawLine(
+      Offset(0, size.height),
+      Offset(size.width * 0.42, size.height * 0.52),
+      linePaint,
+    );
+    canvas.drawRRect(rrect.deflate(0.6), linePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _HistoryEnvelopePainter oldDelegate) {
+    return oldDelegate.accent != accent;
   }
 }
 
@@ -248,7 +326,7 @@ class _EmptyDiaryState extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             const Text(
-              '还没有宠物日记，先去完成一个小任务吧。',
+              '还没有宠物来信，先去完成一个小任务吧。',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,

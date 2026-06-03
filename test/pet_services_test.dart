@@ -57,6 +57,61 @@ void main() {
       expect(pet.energyDecayRemainderMinutes, 0);
     });
 
+    test('accumulates auto exp after qualified online minutes', () {
+      final pet = _pet(hunger: 72, mood: 70, energy: 88);
+
+      final firstResult = service.applyAutoExpGrowth(pet, onlineMinutes: 29);
+      expect(firstResult.changed, isTrue);
+      expect(firstResult.gainedExp, 0);
+      expect(firstResult.leveledUp, isFalse);
+      expect(pet.exp, 0);
+      expect(pet.autoExpGrowthRemainderMinutes, 29);
+
+      final secondResult = service.applyAutoExpGrowth(pet, onlineMinutes: 2);
+      expect(secondResult.changed, isTrue);
+      expect(secondResult.gainedExp, 1);
+      expect(secondResult.leveledUp, isFalse);
+      expect(pet.exp, 1);
+      expect(pet.autoExpGrowthRemainderMinutes, 1);
+    });
+
+    test('pauses auto exp accumulation below stat threshold', () {
+      final pet = _pet(
+        hunger: 72,
+        mood: 69,
+        energy: 88,
+        autoExpGrowthRemainderMinutes: 12,
+      );
+
+      final result = service.applyAutoExpGrowth(pet, onlineMinutes: 10);
+
+      expect(result.changed, isFalse);
+      expect(result.gainedExp, 0);
+      expect(pet.exp, 0);
+      expect(pet.autoExpGrowthRemainderMinutes, 12);
+    });
+
+    test('auto exp can level up through existing exp rules', () {
+      final pet = _pet(
+        level: 1,
+        exp: 39,
+        hunger: 70,
+        mood: 70,
+        energy: 70,
+        autoExpGrowthRemainderMinutes: 29,
+      );
+
+      final result = service.applyAutoExpGrowth(pet, onlineMinutes: 1);
+
+      expect(result.changed, isTrue);
+      expect(result.gainedExp, 1);
+      expect(result.leveledUp, isTrue);
+      expect(pet.level, 2);
+      expect(pet.exp, 0);
+      expect(pet.mood, 80);
+      expect(pet.autoExpGrowthRemainderMinutes, 0);
+    });
+
     test('handles petting, feeding, sleep toggle, and level up', () {
       final now = DateTime(2026, 5, 26, 10);
       final pet = _pet(
@@ -262,6 +317,7 @@ PetModel _pet({
   bool isSleeping = false,
   DateTime? lastInteractionAt,
   int energyDecayRemainderMinutes = 0,
+  int autoExpGrowthRemainderMinutes = 0,
 }) {
   return PetModel(
     id: id,
@@ -275,5 +331,6 @@ PetModel _pet({
     isSleeping: isSleeping,
     lastInteractionAt: lastInteractionAt ?? DateTime(2026, 5, 26, 9),
     energyDecayRemainderMinutes: energyDecayRemainderMinutes,
+    autoExpGrowthRemainderMinutes: autoExpGrowthRemainderMinutes,
   );
 }

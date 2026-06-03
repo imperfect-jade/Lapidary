@@ -182,7 +182,7 @@ class _PetMechanismSection extends StatelessWidget {
           _MechanismRow(
             label: '经验',
             text:
-                '喂食增加经验；完成番茄钟 +8；完成任务按优先级 +16/+12/+8/+4；升级需要当前等级 * 40 经验，升级时心情 +10。',
+                '喂食增加经验；完成番茄钟 +8；完成任务按优先级 +16/+12/+8/+4；在线且心情、饱腹、精力都不低于 70 时，每累计 30 分钟 +1；升级需要当前等级 * 40 经验，升级时心情 +10。',
           ),
           _MechanismRow(
             label: '心情',

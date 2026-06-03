@@ -28,13 +28,14 @@ class PetModelAdapter extends TypeAdapter<PetModel> {
       isSleeping: fields[8] as bool,
       lastInteractionAt: fields[9] as DateTime,
       energyDecayRemainderMinutes: fields[10] == null ? 0 : fields[10] as int,
+      autoExpGrowthRemainderMinutes: fields[11] == null ? 0 : fields[11] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, PetModel obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -56,7 +57,9 @@ class PetModelAdapter extends TypeAdapter<PetModel> {
       ..writeByte(9)
       ..write(obj.lastInteractionAt)
       ..writeByte(10)
-      ..write(obj.energyDecayRemainderMinutes);
+      ..write(obj.energyDecayRemainderMinutes)
+      ..writeByte(11)
+      ..write(obj.autoExpGrowthRemainderMinutes);
   }
 
   @override

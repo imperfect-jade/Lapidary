@@ -27,9 +27,8 @@ class TaskModelAdapter extends TypeAdapter<TaskModel> {
       taskType: fields[7] == null ? 'day' : fields[7] as String,
       focusTargetPeriod: fields[8] == null ? 'daily' : fields[8] as String,
       focusTargetMinutes: fields[9] == null ? 0 : fields[9] as int,
-      overdueMoodPenaltyApplied: fields[10] == null
-          ? false
-          : fields[10] as bool,
+      overdueMoodPenaltyApplied:
+          fields[10] == null ? false : fields[10] as bool,
       completedAt: fields[11] as DateTime?,
     );
   }

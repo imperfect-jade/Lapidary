@@ -82,23 +82,37 @@ class PetController extends GetxController implements PetFeedbackPort {
     await _applyTimeDelta(DateTime.now());
   }
 
+  /// 在线分钟刷新入口，会在时间衰减后追加一次自动经验累计。
+  Future<void> _refreshOnlinePetState() async {
+    await _applyTimeDelta(DateTime.now(), countOnlineAutoExp: true);
+  }
+
   /// 根据上次交互到当前时间的差值更新饱腹、心情和精力。
   ///
   /// 睡眠时恢复精力，清醒时按固定间隔扣精力；若睡满自动醒来，需要同步动作和文案。
-  Future<void> _applyTimeDelta(DateTime now) async {
+  Future<void> _applyTimeDelta(
+    DateTime now, {
+    bool countOnlineAutoExp = false,
+  }) async {
     final currentPet = pet.value;
     if (currentPet == null) {
       return;
     }
 
     final result = stateService.applyTimeDelta(currentPet, now);
-    if (!result.changed) {
+    final autoExpResult = countOnlineAutoExp
+        ? stateService.applyAutoExpGrowth(currentPet, onlineMinutes: 1)
+        : null;
+    final autoExpChanged = autoExpResult?.changed ?? false;
+    if (!result.changed && !autoExpChanged) {
       return;
     }
 
     if (result.wokeUp) {
       action.value = PetAction.idle;
       _showTemporaryMessage(messageService.wokeUp(currentPet));
+    } else if (autoExpResult?.leveledUp ?? false) {
+      _showTemporaryMessage(messageService.levelUp(currentPet));
     } else if (_messageResetTimer == null || !_messageResetTimer!.isActive) {
       _restoreStatusMessage();
     }
@@ -399,7 +413,7 @@ class PetController extends GetxController implements PetFeedbackPort {
   void _startStateTimer() {
     _stateTimer?.cancel();
     _stateTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      refreshPetState();
+      unawaited(_refreshOnlinePetState());
     });
   }
 

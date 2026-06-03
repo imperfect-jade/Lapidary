@@ -21,6 +21,21 @@ class PetExperienceResult {
   const PetExperienceResult({required this.leveledUp, required this.level});
 }
 
+/// 宠物自动经验增长结果，用于在线达标累计后保存和展示升级反馈。
+class PetAutoExpGrowthResult {
+  final bool changed;
+  final int gainedExp;
+  final bool leveledUp;
+  final int level;
+
+  const PetAutoExpGrowthResult({
+    required this.changed,
+    required this.gainedExp,
+    required this.leveledUp,
+    required this.level,
+  });
+}
+
 /// 宠物数值规则服务。
 ///
 /// 该服务只修改传入的 `PetModel`，不访问 Hive、GetX 或 UI；保存和刷新由
@@ -32,6 +47,10 @@ class PetStateService {
   static const int focusEnergyCostIntervalMinutes = 5;
   // 完成休息每 2 分钟恢复 1 点精力，鼓励用户在专注后休息。
   static const int breakEnergyRestoreIntervalMinutes = 2;
+  // 饱腹、心情和精力都达到该阈值时，在线分钟才会累计自动经验进度。
+  static const int autoExpGrowthStatThreshold = 70;
+  // 在线达标累计满 30 分钟获得 1 点经验，保持自动成长的轻量感。
+  static const int autoExpGrowthIntervalMinutes = 30;
 
   /// 当前等级升级所需经验值。
   int expToNextLevel(PetModel pet) {
@@ -185,6 +204,53 @@ class PetStateService {
       leveledUp = true;
     }
     return PetExperienceResult(leveledUp: leveledUp, level: pet.level);
+  }
+
+  /// 判断宠物当前状态是否满足自动经验增长条件。
+  bool canGainAutoExp(PetModel pet) {
+    return pet.hunger >= autoExpGrowthStatThreshold &&
+        pet.mood >= autoExpGrowthStatThreshold &&
+        pet.energy >= autoExpGrowthStatThreshold;
+  }
+
+  /// 累计在线达标分钟，并在满间隔时转化为经验。
+  ///
+  /// 该方法只接收在线计时器提供的分钟数，不根据离线时间补算；低于阈值时暂停累计，
+  /// 但保留此前未满 30 分钟的进度。
+  PetAutoExpGrowthResult applyAutoExpGrowth(
+    PetModel pet, {
+    required int onlineMinutes,
+  }) {
+    if (onlineMinutes <= 0 || !canGainAutoExp(pet)) {
+      return PetAutoExpGrowthResult(
+        changed: false,
+        gainedExp: 0,
+        leveledUp: false,
+        level: pet.level,
+      );
+    }
+
+    pet.autoExpGrowthRemainderMinutes += onlineMinutes;
+    final expGain =
+        pet.autoExpGrowthRemainderMinutes ~/ autoExpGrowthIntervalMinutes;
+    if (expGain <= 0) {
+      return PetAutoExpGrowthResult(
+        changed: true,
+        gainedExp: 0,
+        leveledUp: false,
+        level: pet.level,
+      );
+    }
+
+    pet.autoExpGrowthRemainderMinutes =
+        pet.autoExpGrowthRemainderMinutes % autoExpGrowthIntervalMinutes;
+    final expResult = gainExp(pet, expGain);
+    return PetAutoExpGrowthResult(
+      changed: true,
+      gainedExp: expGain,
+      leveledUp: expResult.leveledUp,
+      level: expResult.level,
+    );
   }
 
   /// 根据任务优先级计算完成后的心情奖励。
